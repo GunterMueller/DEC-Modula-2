@@ -1,0 +1,212 @@
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+DEFINITION MODULE unix;
+
+FROM SYSTEM IMPORT ADDRESS, BYTE;
+IMPORT IO;
+
+TYPE
+    CString = ARRAY @NOCOUNT OF CHAR;
+    CBuffer = ARRAY @NOCOUNT OF BYTE;
+
+    CStringPointer = @DYNARRAY @NOCHECK @NOCOUNT OF CHAR;
+    CBufferPointer = @DYNARRAY @NOCHECK @NOCOUNT OF BYTE;
+
+    CParamPointer = @DYNARRAY @NOCHECK @NOCOUNT OF CStringPointer;
+
+    File = IO.FILE; (* equivalent to FILE * as in <stdio.h> *)
+
+    (* An alternative to CHAR or BYTE (when you want a Signed [numeric] byte) *)
+    s_char = @ALIGN 8 @SIZE 8 INTEGER [-127..128];
+
+    (* Some standard C numeric data types *)
+    short = @ALIGN 16 @SIZE 16 INTEGER [-32768..32767];
+    long = INTEGER;
+
+    (* Some standard C typedefs from <sys/types.h> *)
+    u_char = @ALIGN 8 @SIZE 8 UNSIGNED [0..255];
+    u_short = @ALIGN 16 @SIZE 16 UNSIGNED [0..65535];
+    u_long = UNSIGNED;
+    u_int = UNSIGNED;
+
+    caddr_t = ADDRESS;
+	
+CONST
+    (* most valid flags for open(2) *)
+    OPENREADONLY = 0;
+    OPENWRITEONLY = 1;
+    OPENREADWRITE = 2;
+    OPENNONBLOCKING = 4;
+    OPENAPPEND = 8;
+    OPENCREATE = 1000B;
+    OPENTRUNCATE = 2000B;
+    OPENEXCLUSIVE = 4000B;
+
+    (* For use in comparing against a routine's return value (from <stdio.h>) *)
+    EOF = -1;
+
+VAR
+    (* See parameters.def for a cleaner way to access these. *)
+    argc : CARDINAL;
+    argv : CParamPointer;
+    environ : CParamPointer;
+
+(* VMS must use errno.def for now *)
+$IF unix THEN
+    (* shared variables with Unix *)
+    @EXTERNAL errno : INTEGER;
+$END
+
+    (* IO.input, IO.output, and IO.terminal are equal to these variables. *)
+    stdin, stdout, stderr : File;
+
+(* UNIX I/O SYSTEM CALLS *)
+
+PROCEDURE @EXTERNAL access(CONST fname : CString; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL chmod(CONST name : CString; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL close(fd : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL creat(CONST name : CString; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL dup(fd : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL dup2(fd1, fd2 : INTEGER) : INTEGER;
+(* An interface to the C RTL routine exit() (because EXIT is a reserved word) *)
+PROCEDURE @EXTERNAL uexit(exitCode : INTEGER);
+PROCEDURE @EXTERNAL fstat(fd : INTEGER; VAR buf : CBuffer) : INTEGER;
+PROCEDURE @EXTERNAL lseek(fd : INTEGER; offset : INTEGER; whence : CARDINAL)
+	: INTEGER;
+PROCEDURE @EXTERNAL open(CONST name  : CString;
+			 CONST flags : CARDINAL;
+			 CONST mode  : CARDINAL) : INTEGER;
+PROCEDURE @EXTERNAL read(fd : INTEGER; VAR buffer : CBuffer; nbytes : CARDINAL)
+	: INTEGER;
+PROCEDURE @EXTERNAL rename(CONST fromfile,tofile : CString) : INTEGER;
+PROCEDURE @EXTERNAL stat(CONST name : CString; VAR buf : CBuffer) : INTEGER;
+PROCEDURE @EXTERNAL umask(mask : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL write(fd : INTEGER; CONST buffer : CBuffer; nbytes : CARDINAL)
+	: INTEGER;
+
+$IF vms THEN
+PROCEDURE @EXTERNAL delete(CONST fname : CString) : INTEGER;
+PROCEDURE @EXTERNAL remove(CONST fname : CString) : INTEGER; (* same as above *)
+$ELSE
+PROCEDURE @EXTERNAL fchmod(fd : INTEGER; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL fcntl(fd : INTEGER; request : INTEGER; arg : INTEGER)
+	: INTEGER;
+PROCEDURE @EXTERNAL ioctl(fd : INTEGER; request : INTEGER; argp : ADDRESS)
+	: INTEGER;
+PROCEDURE @EXTERNAL link   (CONST tofile, fromfile : CString) : INTEGER;
+PROCEDURE @EXTERNAL lstat(fd : INTEGER; VAR buf : CBuffer) : INTEGER;
+PROCEDURE @EXTERNAL select (numfds : CARDINAL;
+	VAR readfds, writefds, exceptfds : BITSET; timeout : ADDRESS) : INTEGER;
+PROCEDURE @EXTERNAL symlink(CONST tofile, fromfile : CString) : INTEGER;
+PROCEDURE @EXTERNAL tell(fd : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL unlink (CONST fname : CString) : INTEGER;
+$END
+
+(* UNIX PROCESS SYSTEM CALLS *)
+
+$IF unix THEN
+PROCEDURE @EXTERNAL fork() : INTEGER;
+$END
+PROCEDURE @EXTERNAL vfork() : INTEGER;
+PROCEDURE @EXTERNAL execv  (CONST fname : CString;
+			    CONST argv : CParamPointer)	: INTEGER;
+PROCEDURE @EXTERNAL execve (CONST fname : CString;
+			    CONST argv, envp : CParamPointer) : INTEGER;
+PROCEDURE @EXTERNAL getpid() : INTEGER;
+PROCEDURE @EXTERNAL kill(process : INTEGER; signal : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL wait(VAR status : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL abort();
+PROCEDURE @EXTERNAL sleep(second : CARDINAL);
+PROCEDURE @EXTERNAL signal(sig : INTEGER; func : PROC) : PROC; (* C RTL *)
+PROCEDURE @EXTERNAL sbrk(incr : INTEGER) : ADDRESS;
+
+(* UNIX LIBRARY ROUTINES *)
+
+PROCEDURE @EXTERNAL getenv(CONST name : CString) : CStringPointer;
+PROCEDURE @EXTERNAL perror(CONST msg : CString);
+PROCEDURE @EXTERNAL system(CONST s : CString) : INTEGER;
+PROCEDURE @EXTERNAL ctime(VAR time : INTEGER) : CStringPointer;
+PROCEDURE @EXTERNAL time(VAR time : INTEGER) : INTEGER;
+$IF unix THEN
+PROCEDURE @EXTERNAL gethostname(VAR name : ARRAY OF CHAR) : INTEGER;
+$END
+
+(* If you can, use these; they are faster than similar routines in strings. *)
+PROCEDURE @EXTERNAL strlen (CONST a   : CString) : INTEGER;
+PROCEDURE @EXTERNAL strcmp (CONST a,b : CString) : INTEGER;
+PROCEDURE @EXTERNAL strncmp(CONST a,b : CString; max : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL strcat (CONST a,b : CString);
+PROCEDURE @EXTERNAL strncat(CONST a,b : CString; max : INTEGER);
+PROCEDURE @EXTERNAL strcpy (CONST a,b : CString);
+PROCEDURE @EXTERNAL strncpy(CONST a,b : CString; max : INTEGER);
+PROCEDURE @EXTERNAL strchr (CONST a : CString; c : CHAR) : CStringPointer;
+PROCEDURE @EXTERNAL strrchr(CONST a : CString; c : CHAR) : CStringPointer;
+
+(* These aren't provided in IO. *)
+PROCEDURE @EXTERNAL freopen(CONST fname, mode : CString; CONST f : File) : File;
+PROCEDURE @EXTERNAL fdopen(fd : INTEGER; CONST mode : CString) : File;
+PROCEDURE @EXTERNAL fflush(f : File);
+PROCEDURE @EXTERNAL fseek(f : File; offset, relative : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL ftell(f : File) : INTEGER;
+PROCEDURE @EXTERNAL gets(VAR   str : CString) : CStringPointer;
+PROCEDURE @EXTERNAL puts(CONST str : CString) : CStringPointer;
+PROCEDURE @EXTERNAL ungetc(c : CHAR; f : File) : INTEGER;
+PROCEDURE @EXTERNAL tmpfile() : File;
+PROCEDURE @EXTERNAL mktemp(CONST template : CString) : CStringPointer;
+PROCEDURE @EXTERNAL rewind (f : File);
+
+(* These *are* provided in IO. *)
+PROCEDURE @EXTERNAL fopen(CONST name : CString; CONST mode : CString) : File;
+PROCEDURE @EXTERNAL fclose(file : File);
+PROCEDURE @EXTERNAL fgetc(file : File) : CHAR;
+PROCEDURE @EXTERNAL fputc(c : CHAR; file : File);
+PROCEDURE @EXTERNAL fgets (VAR   str : CString; f : File) : CStringPointer;
+PROCEDURE @EXTERNAL fputs (CONST str : CString; f : File) : CStringPointer;
+PROCEDURE @EXTERNAL fread (VAR   buf: ARRAY OF BYTE; nbytes : INTEGER; f : File)
+	: INTEGER;
+PROCEDURE @EXTERNAL fwrite(CONST buf: ARRAY OF BYTE; nbytes : INTEGER; f : File)
+	: INTEGER;
+
+END unix.

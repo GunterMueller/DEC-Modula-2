@@ -1,0 +1,81 @@
+(****** File: aOut.def ***  Generated from ../include/a.out.h ***)
+
+DEFINITION MODULE aOut;
+
+  export *;
+
+
+TYPE
+    exec = 
+        RECORD
+            a_magic : Integer;
+            a_text,
+            a_data,
+            a_bss,
+            a_syms,
+            a_entry,
+            a_trsize,
+            a_drsize : Unsigned;
+        END;
+
+CONST
+    OMAGIC = 407B;
+    NMAGIC = 410B;
+    ZMAGIC = 413B;
+
+PROCEDURE N_BADMAG( VAR x : exec
+                  ): Boolean;
+
+PROCEDURE N_TXTOFF( VAR x : exec
+                  ): Integer;
+
+PROCEDURE N_SYMOFF( VAR x : exec
+                  ): Unsigned;
+
+PROCEDURE N_STROFF( VAR x : exec
+                  ): Unsigned;
+
+TYPE
+    relocation_info = 
+        RECORD
+            r_address : Integer;
+            r_symbolnum : @align 1 @size 24 [0 .. 16777215];
+            r_pcrel : @align 1 @size 1 [0 .. 1];
+            r_length : @align 1 @size 2 [0 .. 3];
+            r_extern : @align 1 @size 1 [0 .. 1];
+            _gensym_1 : @align 1 @size 4 [0 .. 15];
+        END;
+    _Record2 = 
+        RECORD
+          CASE Cardinal OF
+            0: n_name : DYNARRAY @nocheck @nocount OF Char;
+          | 1: n_strx : Integer;
+          END;
+        END;
+    short = @align 16 @size 16 [-32768 .. 32767];
+    nlist = 
+        RECORD
+            n_un : _Record2;
+            n_type,
+            n_other : @size 8 @align 1 [0..255];
+            n_desc : short;
+            n_value : Unsigned;
+        END;
+
+CONST
+    N_UNDF = 0H;
+    N_ABS = 2H;
+    N_TEXT = 4H;
+    N_DATA = 6H;
+    N_BSS = 8H;
+    N_COMM = 12H;
+    N_FN = 1FH;
+    N_EXT = 1B;
+    N_TYPE = 1EH;
+    N_STAB = 0E0H;
+    N_FORMAT = "%08x";
+    
+(**?** n_hash = n_desc *)
+
+
+END aOut.

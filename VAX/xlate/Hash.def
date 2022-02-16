@@ -1,0 +1,10 @@
+DEFINITION MODULE Hash;
+
+EXPORT QUALIFIED HashRange, codeForLetter;
+
+TYPE
+    HashRange = [0..106];
+VAR
+    codeForLetter : ARRAY CHAR OF CARDINAL;
+
+END Hash.

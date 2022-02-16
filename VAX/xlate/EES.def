@@ -1,0 +1,158 @@
+definition module EES;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+
+from Types import ShortString, pcodetype, sizerange;
+
+export qualified
+    EESSTACKSIZE, NUMTEMPS, APOFF, DISPOFF, Reg, RegSet,
+    RETURNREG, FIRSTREG, LASTEESREG, LASTREG, SPREG, FIRSTVREG,
+    LASTVREG, MAXDISPLEVEL, RegState, RegStateSet, EESKind,
+    EESKindSet, EESElement, Level, EESRecord, ees, top,
+    maxtoffset, firsttreg, regString, TREGSET,
+    Push, Pop, CheckFreeReg, DumpReg, DumpEES, ClearEES, ClearReg,
+    Registerize, DeRegisterize, AllocReg, FreeReg, NeedDisp,
+    FreeDisp, ClearDisp, DispReg, ClearAddress,
+    SaveRegs, RestoreRegs, SwapEES, MoveReg, MemTReg,
+    TRegReg, ActiveReg, callNest;
+
+const
+    EESSTACKSIZE =   32;    (* maximum size of the ees *)
+    NUMTEMPS     =  -10;    (* minus the number of temps *)
+    APOFF        =   -4;    (* offset of current ap in activation record *)
+    DISPOFF      =   -8;    (* offset of old display reg in activation record *)
+type
+    Reg = (NULLREG,
+	    r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+	    ap, fp, sp, pc,
+	    r20, r21, r22, r23, r24, r25, r26, r27, r28, r29,
+	    r30, r31, r32, r33, r34, r35, r36, r37, r38, r39, r40,
+	    rt0, rt1, rt2, rt3, rt4, rt5, rt6, rt7, rt8, rt9,
+	    SAVEDREG, SR0, SR1, SR2, SR3, SR4, SR5, SR6, SR7, SR8, SR9,
+	    SAVEDDREG, SD0, SD1, SD2, SD3, SD4, SD5, SD6, SD7, SD8, SD9);
+	    (* note: tregs cannot have multi-word values (no longreals!) *)
+
+    RegSet = set of Reg;
+
+const
+    TREGSET     = RegSet{rt0..rt9};
+    RETURNREG   = r0;          (* return values from procedures in this reg *)
+    FIRSTREG    = r1;
+    LASTEESREG  = r5;	(* ees restricted to scratch regs r1-r5 *)
+    LASTREG     = r11;
+    SPREG       = sp;
+    FIRSTVREG   = r20;
+    LASTVREG    = r40;
+    LASTSREG = SR9;
+    LASTSDREG = SD9;
+    MAXDISPLEVEL = 15;	(* maximum display level *)
+type
+    RegState =
+	(REGALLOC, REGFREE, REGRETURN, REGSP, REGREG, REGTEMP, REGDISP, REGEES);
+    RegStateSet = set of RegState;
+
+    EESKind = (EESDATA, EESADDR, EESVAR);
+    EESKindSet = set of EESKind;
+
+    EESElement = [NUMTEMPS..EESSTACKSIZE];
+    (*
+    EESDATA:	constInt, dreg
+    EESADDR:	breg, sreg, addrLevel, addrMemType, addrOffset, addrBlock
+    EESVAR:	addrLevel, addrMemType, addrOffset, addrBlock, indirect
+    *)
+    Level = [0..MAXDISPLEVEL];
+    EESRecord = record
+	ptype       : pcodetype;
+	size	    : sizerange;
+	kind	    : EESKind;
+	inUse       : boolean;
+	constInt    : integer;
+	dreg	    : Reg;
+	breg	    : Reg;
+	sreg	    : Reg;
+	sunits      : sizerange;
+	addrLevel   : Level;
+	addrMemType : char;
+	addrOffset  : integer;
+	addrBlock   : integer;
+	indirect    : boolean;
+	smemoffset  : sizerange;
+	smemsize    : sizerange;
+	callNest    : cardinal;
+    end;
+var
+    ees		: array [NUMTEMPS..EESSTACKSIZE] of EESRecord;
+    top		: EESElement;
+    callNest : cardinal;
+    maxtoffset  : integer;
+    firsttreg   : Reg;
+    regString   : array Reg of ShortString;     (* table for printing registers *)
+
+procedure Push(kind : EESKind); 
+procedure Pop(num:integer); 
+procedure CheckFreeReg; 
+procedure DumpReg; 
+procedure DumpEES; 
+procedure ClearEES(e : EESElement); 
+procedure ClearReg; 
+procedure Registerize(var r : Reg); 
+procedure DeRegisterize(r : Reg; e : EESElement); 
+procedure AllocReg(state : RegState; e : EESElement; ptype : pcodetype) : Reg;
+	
+procedure FreeReg(var r : Reg); 
+procedure NeedDisp(level : integer; mt : char); 
+procedure FreeDisp; 
+procedure ClearDisp; 
+procedure DispReg(level : integer; mt : char) : Reg; 
+procedure ClearAddress(e : EESElement); 
+procedure SaveRegs(below : EESElement); 
+procedure RestoreRegs(below : EESElement); 
+procedure SwapEES(a,b : EESElement); 
+procedure MoveReg(e : EESElement; r : Reg); 
+procedure MemTReg(offset : integer) : Reg; 
+procedure TRegReg(r : Reg) : Reg; 
+procedure ActiveReg(r : Reg) : boolean; 
+end EES.

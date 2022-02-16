@@ -1,0 +1,244 @@
+definition module symtab;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+from Strings import String;
+
+from list import List;
+
+export qualified DataType, BlockNumber, Scope,
+    Symbol, SymbolKind, DefineSymbol, NewScope,
+    TypeNode, EnumNode, FieldNode, currScope, DumpSymTab,
+    ModuleNode, PortNode, ConstNode, SetValue, ParamNode, ParamKind,
+    builtinScope, moduleScope, globalScope, traceSymtab,
+    ArrayKind, PointerKind, GlobalSymKind, fileList;
+const
+    MAXBLOCKNUMBER  = 1000;
+    MAXSETSIZE      = 1024;
+type
+    BlockNumber     = [0..MAXBLOCKNUMBER];
+    TypeNumber      = cardinal;
+    SymbolCase      = (ONECASE, ANYCASE, SCOPECASE);
+    MemoryOffset    = cardinal;
+    PointerKind     = (PTRMODULA, PTRPASCAL, PTRC, PTRNILCHECK, PTRNOCHECK,
+			PTRLOCAL);
+
+(* pointers to things.  Defining them here reduces ordering constraints *)
+type
+    Scope       = BlockNumber;
+    Symbol      = pointer to SymbolRec;
+    ConstNode   = pointer to ConstNodeRec;
+    TypeNode    = pointer to TypeNodeRec;
+    VarNode     = pointer to VarNodeRec;
+    FieldNode   = pointer to FieldNodeRec;
+    ModuleNode  = pointer to ModuleNodeRec;
+    EnumNode    = pointer to EnumNodeRec;
+    ParamNode   = pointer to ParamNodeRec;
+    SetValue    = pointer to SetValueRec;
+    ConstSetNode = pointer to ConstSetNodeRec;
+    PortNode    = pointer to PortNodeRec;
+
+    SymbolKind = (SYMNULL, SYMVAR, SYMCONST, SYMPROC, SYMTYPE, SYMMODULE);
+    SymbolRec = record
+	next	    : Symbol;
+	name	    : String;
+	symCase     : SymbolCase;
+	nextInTable : Symbol;
+	block       : BlockNumber;
+	case kind   : SymbolKind of
+	| SYMMODULE : 
+	    symModule   : ModuleNode;
+	| else
+	    imported    : List;
+	    exported    : PortNode;
+	    homeModule  : ModuleNode;
+	end;
+    end;
+
+    GlobalSymKind = (GSNORMAL, GSINTERNAL, GSGLOBAL, GSEXTERNAL, GSINLINE);
+
+    PortNodeRec = record
+	next	    : PortNode;
+	name	    : String;
+	refModule   : ModuleNode;
+	extern      : GlobalSymKind;
+	case kind   : SymbolKind of
+	| SYMCONST : symConst : ConstNode;
+	| SYMTYPE  : symType  : TypeNode;
+	| SYMVAR   : symVar   : TypeNode;
+	| SYMPROC  : symProc  : TypeNode;
+	end;
+    end;
+
+    DataType = (DTNULL, DTPOINTER, DTRECORD, DTARRAY, DTINTEGER, DTBOOLEAN,
+		DTCHAR, DTRENAME, DTSTRING, DTREAL, DTSET, DTCARDINAL, DTBYTE,
+		DTSUBRANGE, DTENUMERATION, DTPROC, DTWORD, DTANY, DTLONGREAL,
+		DTCARDINT, DTOPAQUE, DTPROCESS, DTADDRESS, DTFILE, DTOPENARRAY);
+    ArrayKind = (ARRAYOPEN, ARRAYDYNAMIC, ARRAYSUBARRAY);
+
+    ConstNodeRec = record
+	next      : ConstNode;
+	case kind : DataType of
+	| DTSTRING      : strVal  : String;
+	| DTCHAR	: charVal : cardinal;
+	| DTINTEGER, 
+	  DTCARDINAL    : cardVal : integer;
+	| DTBOOLEAN     : boolVal : cardinal;
+	| DTREAL,
+	  DTLONGREAL    : realVal : String;
+	| DTSET		: setVal  : SetValue;
+	| DTENUMERATION : enumVal : EnumNode;
+	end;
+    end;
+
+    TypeNodeRec = record
+	size, alignment : integer;
+	canonicalType : TypeNode;
+	case kind : DataType of
+	| DTPOINTER :
+	    toType      : TypeNode;
+	    ptrKind     : PointerKind;
+	| DTRECORD :
+	    fieldList   : List;
+	| DTSET :
+	    setRange    : TypeNode;
+	| DTARRAY :
+	    indexType   : TypeNode;
+	    elementType : TypeNode;
+	| DTOPENARRAY :
+	    arrayKind       : ArrayKind;
+	    openElementType : TypeNode;
+	    numDimensions   : cardinal;
+	    dynArrayKind    : PointerKind;
+	| DTSUBRANGE :
+	    subMinOrd, 
+	    subMaxOrd   : integer;
+	    baseType    : TypeNode;
+	| DTENUMERATION :
+	    enumCount   : cardinal;
+	    enumList    : List;
+	| DTOPAQUE :
+	    opaqueName  : String;
+	| DTPROC :
+	    numParams   : integer;
+	    paramList   : List;
+	    retType     : TypeNode;
+	    inlineTimeStamp : integer;
+	end;
+    end;
+
+    FieldNodeRec = record
+	next	    : FieldNode;
+	name	    : String;
+	fieldType   : TypeNode;
+	offset, size : MemoryOffset;
+    end;
+
+    EnumNodeRec = record
+	next     : EnumNode;
+	name     : String;
+	enumType : TypeNode;
+	enumOrd  : integer;
+    end;
+
+    ParamKind = (PARAMCONST, PARAMVAR, PARAMVALUE,
+		    PARAMARRAYCONST, PARAMARRAYVAR, PARAMARRAYVALUE);
+    ParamNodeRec = record
+	next	  : ParamNode;
+	name      : String;
+	paramType : TypeNode;
+	kind      : ParamKind;
+    end;
+
+    SetValueRec = record
+	next    : SetValue;
+	setType : TypeNode;
+	size    : cardinal;
+	value   : String;
+    end;
+
+    ConstSetNodeRec = record
+	next : ConstSetNode;
+	lower, upper : ConstNode;
+    end;
+
+    ModuleNodeRec = record
+	next	    : ModuleNode;
+	name	    : String;
+	scope       : Scope;
+	exports     : List;
+	defined     : boolean;
+	outOfDate   : boolean;  (* Imported module differs from this module *)
+	oldObject   : boolean;  (* this .o file is older than the .def of an
+				   imported module that cause problems, and
+				   should be recompiled if outOfDate *)
+	watchErrors : boolean;  (* This module has already been recompiled, and
+				   recompiling it again will change nothing *)
+	examineErrors : boolean; (* Imported module was outOfDate last round, 
+				    but because not oldObject (.o younger than
+				    imported .def's) the importer was
+				    recompiled.  Recompile this module if
+				    outOfDate this round *)
+	ignoreErrors : boolean; (* Don't pay attention to this module *)
+	named, builtin : boolean;
+	fileName    : cardinal;
+	defTime     : integer;  (* Last modification time of def *)
+	objectTime  : integer;  (* Last modification time of object *)
+    end;
+
+var
+    currScope, moduleScope, builtinScope, globalScope : Scope;
+    traceSymtab : boolean;
+(* ||| const 512 gross kludge to keep circ refs initted correctly *)
+(* Real solution is to restructure stuff *)
+    fileList : array [1..512] of String; 
+
+procedure DumpSymTab();
+
+procedure NewScope() : Scope;
+
+procedure DefineSymbol(var sym : Symbol; name : String; scope : Scope): boolean;
+
+end symtab.

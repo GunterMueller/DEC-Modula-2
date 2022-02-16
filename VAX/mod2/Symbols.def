@@ -1,0 +1,991 @@
+definition module Symbols;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+
+from Machine import
+    HugeInteger, TimeStamp;
+
+from Strings import
+    String;
+
+from Tokens import
+    Token;
+
+const
+    MAXDISPLAYLEVEL =    15;
+    MAXSETSIZE      =  1023;
+    NULLLABEL       =  9999;
+    MAXLABEL	    = 50000;
+
+    NUMOPTTEMPS     =    40;   (* CSE temps *)
+    NUMFASTWORDS    =    20;   (* FAST storage for variables *)
+    NUMTEMPSTORAGE  =    60;   (* total potential register storage *)
+
+    MAXBUILTINSCOPES =  100;
+    MAXOPTBLOCKLEVEL =  255;
+
+type
+
+    BlockNumber     = cardinal;
+    DisplayLevel    = [0..MAXDISPLAYLEVEL];
+    DisplayLevelSet = set of DisplayLevel;
+
+const
+    SIZEUNSPECIFIED = -1;
+    ALIGNMENTUNSPECIFIED = -1;
+
+type
+    MemoryOffset    = integer;
+    MemoryType      = (MEMNONE, MEMABSOLUTE, MEMINLINE,
+			MEMGLOBAL, MEMNORMAL, MEMFAST, MEMPARAM);
+    MemoryTypeSet   = set of MemoryType;
+
+    LabelNumber     = [NULLLABEL..MAXLABEL];
+    TypeNumber      = integer;
+    OptTime	    = integer;
+    SymbolCase      = (ONECASE,ANYCASE);
+
+    EvalMode	    = (EVALGET, EVALPUT, EVALPOINT);
+    EvalModeSet     = set of EvalMode;
+
+    PointerKind     = (PTRMODULA, PTRPASCAL, PTRC, PTRNILCHECK, PTRNOCHECK,
+		       PTRLOCAL);
+    PointerKindSet  = set of PointerKind;
+
+    CheckKind       = (CHECKRANGE, CHECKVARIANT, CHECKSUBSCR, CHECKSUBSCROPEN, 
+		       CHECKPTRREF, CHECKPTRASSIGN,
+		       CHECKDYNARRAY, CHECKSUBARRAY);
+    CheckKindSet    = set of CheckKind;
+
+    GlobalSymKind   = (GSNORMAL, GSPRIVATE, GSGLOBAL, GSEXTERNAL, GSINLINE,
+		       GSASM);
+    PackOrder       = (PACKLEFTTORIGHT, PACKRIGHTTOLEFT);
+
+(* pointers to things.  Defining them here reduces ordering constraints *)
+type
+    Scope	    = pointer to ScopeRec;
+    Symbol	    = pointer to SymbolRec;
+    SymbolList      = pointer to SymbolListRec;
+    ConstNode       = pointer to ConstNodeRec;
+    TypeNode	    = pointer to TypeNodeRec;
+    VarNode	    = pointer to VarNodeRec;
+    VarList	    = pointer to VarListRec;
+    FieldNode       = pointer to FieldNodeRec;
+    FieldList       = pointer to FieldListRec;
+    VariantNode     = pointer to VariantNodeRec;
+    VariantList     = pointer to VariantListRec;
+    ModuleNode      = pointer to ModuleNodeRec;
+    ModuleList      = pointer to ModuleListRec;
+    ProcNode	    = pointer to ProcNodeRec;
+    ProcList	    = pointer to ProcListRec;
+    ExprNode	    = pointer to ExprNodeRec;
+    ExprList	    = pointer to ExprListRec;
+    StmtNode	    = pointer to StmtNodeRec;
+    StmtList	    = pointer to StmtListRec;
+    CaseNode	    = pointer to CaseNodeRec;
+    CaseList	    = pointer to CaseListRec;
+    CaseTreeNode    = pointer to CaseTreeNodeRec;
+    EnumNode	    = pointer to EnumNodeRec;
+    EnumList	    = pointer to EnumListRec;
+    ConstSetNode    = pointer to ConstSetNodeRec;
+    ConstSetList    = pointer to ConstSetListRec;
+    ExprSetNode     = pointer to ExprSetNodeRec;
+    ExprSetList     = pointer to ExprSetListRec;
+    ParamNode       = pointer to ParamNodeRec;
+    ParamList       = pointer to ParamListRec;
+    IdentNode       = pointer to IdentNodeRec;
+    IdentList       = pointer to IdentListRec;
+    ImportNode      = pointer to ImportNodeRec;
+    ImportList      = pointer to ImportListRec;
+    SetValue	    = pointer to SetValueRec;
+    CodeNode	    = pointer to CodeNodeRec;
+    CodeList	    = pointer to CodeListRec;
+    GlobalVarNode   = pointer to GlobalVarNodeRec;
+    GlobalVarList   = pointer to GlobalVarListRec;
+    AllocationNode  = pointer to AllocationNodeRec;
+    WithQualNode    = pointer to WithQualNodeRec;
+    TempMapNode     = pointer to TempMapNodeRec;
+    PortNode	    = pointer to PortNodeRec;
+    PortList	    = pointer to PortListRec;
+    ConstParamNode  = pointer to ConstParamNodeRec;
+    ConstParamList  = pointer to ConstParamListRec;
+    ImportedNode    = pointer to ImportedNodeRec;
+    ImportedList    = pointer to ImportedListRec;
+    FormerNode      = pointer to FormerNodeRec;
+    FormerElementNode   = pointer to FormerElementNodeRec;
+    FormerElementList   = pointer to FormerElementListRec;
+    InlineParamNode     = pointer to InlineParamNodeRec;
+    InlineParamList     = pointer to InlineParamListRec;
+    OptNode	    = pointer to OptNodeRec;
+$if pascal then
+    LabelNode       = pointer to LabelNodeRec;
+    LabelList       = pointer to LabelListRec;
+    FileVarNode     = pointer to FileVarNodeRec;
+    FileVarList     = pointer to FileVarListRec;
+$end
+
+    AllocationArray   = array [MEMNORMAL..MEMPARAM] of MemoryOffset;
+    AllocationNodeRec = record
+	current, maximum : AllocationArray;
+    end;
+
+    InlineValueKind = (IPVAR, IPCONST, IPPARAM, ILVAR);
+    InlineValueKindSet = set of InlineValueKind;
+    InlineValue     = record
+        case kind : InlineValueKind of 
+        | ILVAR     : ilVar		: VarNode;      (* local var *)
+        | IPVAR     : ipVar		: VarNode;      (* var param var *)
+        | IPCONST   : ipConst		: ConstNode;    (* const param const *)
+        | IPPARAM   : ipParam		: VarNode;      (* normal param *)
+                      ipParamBaseVar    : VarNode; 
+		      ipParamBasePtrType : TypeNode;
+	end;
+    end;
+
+    Address = record
+	case kind     : MemoryType of
+	| MEMNONE     : (* nothing *);
+	| MEMGLOBAL   : gvn         : GlobalVarNode;
+	| MEMNORMAL, 
+	  MEMFAST, 
+	  MEMPARAM    : level       : DisplayLevel;
+			proc        : ProcNode;
+			offset      : MemoryOffset;
+			upLevelAddr : boolean;
+	| MEMABSOLUTE : absolute    : MemoryOffset;
+	| MEMINLINE   : inlineVal   : InlineValue;
+	end;
+    end;
+
+    TempMapNodeRec = record
+	map	    : array [0..NUMTEMPSTORAGE-1] of MemoryOffset;
+	numReg      : integer;
+        numOptTemp  : integer;
+    end;
+
+    OptMarkTime = record
+	time : OptTime;
+	proc : ProcNode;
+    end;
+    
+    ScopeRec = record
+	block 	  : BlockNumber;
+	open  	  : boolean;
+	enclosing : Scope;
+	symbols	  : SymbolList;
+    end;
+
+    SymbolKind = (
+$if pascal then
+			    SYMLABEL,
+$end
+			    SYMVAR, SYMCONST, SYMPROC, SYMTYPE,
+			    SYMMODULE, SYMFIELD, SYMENUM, SYMANY);
+    SymbolRec = record
+	name        : String;
+	block       : BlockNumber;
+	symCase     : SymbolCase;
+	next	    : Symbol;
+	nextInTable : Symbol;
+	used        : boolean;
+	case kind   : SymbolKind of
+$if pascal then
+	| SYMLABEL  : symLabel  : LabelNode;
+$end
+	| SYMCONST  : symConst  : ConstNode;
+	| SYMTYPE   : symType   : TypeNode;
+	| SYMVAR    : symVar    : VarNode;
+	| SYMMODULE : symModule : ModuleNode;
+	| SYMPROC   : symProc   : ProcNode;
+	| SYMFIELD  : symField  : FieldNode;
+	| SYMENUM   : symEnum   : EnumNode;
+	end;
+    end;
+    SymbolListRec = record
+	first, last : Symbol;
+    end;
+
+    PortNodeRec = record
+	next 	  : PortNode;
+	theModule : ModuleNode;
+	sym 	  : Symbol;
+	isQualified : boolean;
+	isExport  : boolean;
+	extern 	  : GlobalSymKind;
+    end;
+    PortListRec = record
+	first, last : PortNode;
+    end;
+
+    DataType = (DTCARDINAL, DTINTEGER, DTREAL, DTLONGREAL, DTCHAR, DTBOOLEAN, 
+		DTSUBRANGE, DTENUMERATION, DTWORD, DTBYTE, DTSET, DTPOINTER, 
+		DTRENAME, DTOPAQUE, DTSTRING, DTARRAY, DTRECORD,
+		DTPROC, DTDYNARRAY, DTDESCRIPTOR, DTANY
+$if pascal then
+		,DTFILE
+$end
+		);
+    DataTypeSet = set of DataType;
+
+    ConstNodeRec = record
+	case kind : DataType of
+	| DTSTRING 	: strVal    : String;
+	| DTCHAR 	: charVal   : char;
+	| DTINTEGER,
+	  DTCARDINAL 	: cardVal   : HugeInteger;
+	| DTBOOLEAN 	: boolVal   : boolean;
+	| DTREAL, 
+	  DTLONGREAL 	: realVal   : longreal;
+	| DTSET 	: setVal    : SetValue;
+	| DTENUMERATION : enumVal   : EnumNode;
+	| DTPROC 	: procVal   : ProcNode;
+	| DTARRAY	: arrayVal  : FormerNode;
+	| DTRECORD      : recordVal : FormerNode;
+	end;
+    end;
+
+    ArrayKind = (ARRAYNORMAL, ARRAYOPEN, ARRAYSUBARRAY, ARRAYNOCOUNT);
+    ArrayKindSet = set of ArrayKind;
+
+type
+    TypeNodeRec = record
+	next		: TypeNode;
+	size, 
+	alignment       : MemoryOffset;
+	number		: TypeNumber;
+	markTime	: OptMarkTime;
+	name		: String;		(* local name for type *)
+	theModule       : ModuleNode;	(* definition module type was defined in *)
+$if pascal then
+	containsFiles   : boolean;
+$end
+	opaqueName      : String;		(* name if now or ever opaque type *)
+	case kind       : DataType of
+	| DTPOINTER     : toType 	: TypeNode; 
+	    		  ptrKind 	: PointerKind;
+	| DTRECORD      : recScope 	: Scope; 
+	    		  fieldOrder    : PackOrder;
+			  fieldList     : FieldList;
+	| DTSET		: setRange 	: TypeNode;
+			  bitOrder      : PackOrder;
+	| DTARRAY       : indexType 	: TypeNode; 
+	    		  elementType   : TypeNode;
+			  elementSize   : MemoryOffset;
+			  arrayKind     : ArrayKind;
+			  descripCount  : cardinal;
+	| DTDYNARRAY	: dynArrayType 	: TypeNode; 
+	    		  dynArrayKind  : PointerKind;
+	| DTDESCRIPTOR  : descripType   : TypeNode;
+	| DTRENAME      : renameType	: TypeNode;
+	| DTSUBRANGE    : subMinOrd, 
+	    		  subMaxOrd 	: HugeInteger; 
+			  baseType	: TypeNode;
+	| DTENUMERATION,
+	  DTBOOLEAN     : enumMin, 
+	    		  enumMax 	: integer; 
+			  enumContiguous: Boolean;
+			  enumList 	: EnumList;
+			  nameTable     : VarNode;
+	| DTSTRING      : stringLength  : integer;
+	| DTPROC 	: numParams     : integer; 
+	    		  paramList     : ParamList;
+			  funcType      : TypeNode;
+$if pascal then
+	| DTFILE	: fileType      : TypeNode;
+			  isTextFile    : boolean;
+$end
+	end;
+    end;
+
+    FieldKind = (FIELDNORMAL, FIELDTAG);
+    FieldNodeRec = record
+	next 		  : FieldNode;
+	name 		  : String;
+	recType 	  : TypeNode;
+	fieldType 	  : TypeNode;
+	offset 		  : MemoryOffset;
+	size		  : MemoryOffset;
+	containingVariant : VariantNode;
+	case kind 	  : FieldKind of
+	| FIELDTAG    : variantList : VariantList;
+	end;
+    end;
+    FieldListRec = record
+	first, last : FieldNode;
+	size	    : MemoryOffset; (* Size for these and all variants *)
+    end;
+
+    VariantNodeRec = record
+	next 	  : VariantNode;
+	elsePart  : boolean;
+	tag 	  : ConstSetList;
+	tagField  : FieldNode;
+	fieldList : FieldList;
+    end;
+    VariantListRec = record
+	first, last : VariantNode;
+    end;
+
+    EnumNodeRec = record
+	next 	  : EnumNode;
+	name 	  : String;
+	enumSym   : Symbol;
+	enumType  : TypeNode;
+	enumOrd   : integer;
+	enumValue : boolean;
+    end;
+    EnumListRec = record
+	first, last : EnumNode;
+    end;
+
+    VarKind = (VARNORMAL, VARCONSTPARAM, VARFORINDEX);
+    VarNodeRec = record
+	next 	 : VarNode;
+	name 	 : String;
+	kind 	 : VarKind;
+	indirect : boolean;
+	varParam : boolean;
+	varType  : TypeNode;
+	address	 : Address;
+	markTime : OptMarkTime;
+    end;
+    VarListRec = record
+	first, last : VarNode;
+    end;
+
+    ModuleKind = (MODGLOBAL, MODPROGRAM, MODDEFINITION, MODIMPLEMENTATION);
+    ModuleKindSet = set of ModuleKind;
+    ModuleNodeRec = record
+	next		: ModuleNode;
+	name		: String;
+	enclosing       : ModuleNode;
+	enclosingProc   : ProcNode;
+	kind		: ModuleKind;
+	unqualExports, 
+	qualExports     : IdentList;
+	imports		: ImportList;
+	imported	: ImportedList;
+	doingImport     : boolean;
+	exportAll       : boolean;
+        containsInline  : boolean;
+        noinit		: boolean;
+        doinit		: boolean;
+	exportScope     : Scope;
+	procs		: ProcList;
+	modules		: ModuleList;
+	scope		: Scope;
+	body		: StmtList;
+	time		: TimeStamp;
+    end;
+    ModuleListRec = record
+	first, last : ModuleNode;
+    end;
+
+    BuiltinProcType = (
+	BIPNOTBIP, BIPABS, BIPCHR, BIPDISPOSE, BIPNEW, BIPODD, BIPORD, 
+	BIPTRUNC, BIPASSERT, BIPMIN, BIPXFC
+$if modula2 then
+	,BIPCAP, BIPDEC, BIPEXCL, BIPFLOAT, BIPHALT, BIPHIGH, BIPINC,
+	BIPINCL,
+	BIPVAL, BIPLONGFLOAT, BIPMAX, BIPLOW, BIPNUMBER, BIPDESCRIPTOR,
+	BIPFIRST, BIPLAST, BIPCPUTIME, BIPNEWPROCESS, BIPTRANSFER, 
+        BIPADR, BIPBYTESIZE, BIPTBYTESIZE, BIPBITSIZE, BIPTBITSIZE,
+        BIPWORDSIZE, BIPTWORDSIZE,
+	BIPOPENF, BIPCLOSEF, BIPWRITEF, BIPREADF, BIPWRITES, BIPREADS,
+	BIPWRITEC, BIPREADC, BIPREADB, BIPWRITEB, BIPSREADF, BIPSWRITEF,
+	BIPBITAND, BIPBITOR, BIPBITNOT, BIPBITXOR, BIPBITSHIFTLEFT,
+	BIPBITSHIFTRIGHT, BIPBITINSERT, BIPBITEXTRACT,
+	BIPLOCAL, BIPALLOCATE, BIPDEALLOCATE
+$else
+	,BIPwrite, BIPwriteln, BIPread, BIPreadln, BIPeoln, BIPeof, BIPpage,
+	BIPget,	BIPput, BIPreset, BIPrewrite,
+	BIPsqr, BIPsin, BIPcos, BIPexp, BIPln, BIPsqrt, BIParctan,
+	BIPround, BIPsucc, BIPpred, BIPpack, BIPunpack,
+	
+	BIPflush, BIPlinelimit, BIPmessage, BIPremove, 
+	BIPargv, BIPargc, BIPdate, BIPhalt, BIPnull,
+	BIPexpo, BIPrandom, BIPseed, BIPstlimit, BIPtime,
+	BIPcard, BIPclock, BIPsysclock, BIPundefined, BIPwallclock, 
+	(* Compiler-generated, non-user accessible procs *)
+	BIPfnil, BIPlongfloat, BIPunit, BIPread4, BIPread8, BIPreade, BIPreadc,
+	BIPwritec, BIPfputc, BIPwritef, BIPfprintf, BIPwrites, BIPfwrite,
+	BIPmax, BIPnam
+$end
+	);
+
+    BuiltinProcTypeSet = set of BuiltinProcType;
+
+    ProcNodeRec = record
+	next		    : ProcNode;
+	fileName	    : String;
+	lineNumber	    : integer;
+	name		    : String;
+	globalName	    : String;
+	builtin		    : BuiltinProcType;
+	procType	    : TypeNode;
+	doCheck		    : boolean;  (* Check for func return val *)
+$if pascal then
+	funcAssigned	    : boolean;	(* value assigned to function ? *)
+	returnVar	    : VarNode;	(* place to store func return val *)
+$end
+	returnSeen	    : boolean;
+	block		    : BlockNumber;
+	scope		    : Scope;
+	displayLevel	    : DisplayLevel;
+	enclosing	    : ProcNode;
+	enclosingModule     : ModuleNode;
+	body		    : StmtList;
+	code		    : CodeList;
+	mem		    : AllocationNode;
+	tempMap		    : TempMapNode;
+	initFlagVar	    : VarNode;
+	containsProcs       : boolean;
+$if pascal then
+	containsFiles       : boolean;
+	(* Proc's that have labels that are targets of out-of-block gotos 
+	   must store the proc's state for use w/setjmp,longjmp *)
+	OOBLabelList	    : LabelList;
+	nextOOBIndex        : integer;
+	jmpBuf		    : VarNode;
+$end
+	internalProc	    : boolean;
+        inlineProc, 
+	checked, 
+	beingChecked, 
+	inlineBeingExpanded : boolean;
+	extern		    : GlobalSymKind;
+	tailRecursion       : boolean;
+	tailRecursionEntry  : LabelNumber;
+	doesUpLevel, 
+	containsUpLevel     : DisplayLevelSet;
+	varList		    : VarList;
+	time		    : TimeStamp;
+	minParams,
+	maxParams	    : integer;	(* only used for builtins *)
+    end;
+    ProcListRec = record
+	first, last : ProcNode;
+    end;
+
+    ExprKind = (
+$if pascal then
+	EXPROCT, EXPRHEX,   (* DON'T MOVE THESE...pas.gram needs them ! *)
+$end
+	EXPRNAME, EXPRSYM, EXPRCONST, EXPRUNOP, EXPRBINOP, EXPRSUBSCR, 
+	EXPRDOT, EXPRDEREF, EXPRFUNC, EXPRVAR, EXPRSET, EXPRVAL,
+	EXPRCHECK, EXPRRANGE, EXPRSAVE, EXPRFORMER, EXPRDESCRIPTOR,
+	EXPRINLINE, EXPRBAD);
+    ExprKindSet = set of ExprKind;
+    ExprNodeRec = record
+	next		: ExprNode;
+$if pascal then
+	widthExpr,
+	decimalExpr	: ExprNode; (* For e:w:d in write statements *)
+$end
+	fileName	: String;
+	lineNumber      : integer;
+	exprType	: TypeNode;
+ 	baseVar		: VarNode;
+	basePtrType     : TypeNode;
+	opt		: OptNode;
+	optNoReorder    : boolean;
+	doCheck  	: boolean;
+	doPtrAssignCheck: boolean;
+	case kind       : ExprKind of
+	| EXPRNAME      : exprName        : IdentList;
+	| EXPRSYM       : exprSym         : Symbol;
+	| EXPRCONST     : exprConst       : ConstNode;
+			  constType       : TypeNode;
+	| EXPRVAR       : exprVar         : VarNode;
+	| EXPRUNOP      : exprUnOp        : Token; 
+		          opnd		  : ExprNode;
+		          unOperType      : TypeNode;
+	| EXPRBINOP     : exprBinOp       : Token; 
+	    	          opnd1, 
+		          opnd2		  : ExprNode;
+		          operType        : TypeNode;
+	| EXPRSUBSCR    : arr		  : ExprNode;
+		          subsOffset      : HugeInteger; 
+		          subscripts      : ExprList;
+	| EXPRDOT       : rec		  : ExprNode; 
+			  fieldName       : String; 
+			  field		  : FieldNode;
+	| EXPRDEREF     : realPtr         : boolean; 
+			  ptr		  : ExprNode;
+	| EXPRFUNC      : func		  : ExprNode; 
+			  params	  : ExprList;
+			  selected        : boolean;
+			  addrOfValue     : VarNode;
+	| EXPRSET       : setTypeName     : IdentList; 
+			  setType         : TypeNode;
+			  setConst        : ConstSetList; 
+			  setExpr         : ExprSetList;
+	| EXPRVAL       : exprVal         : ExprNode; 
+			  dependVar       : VarNode;
+			  dependPtrType   : TypeNode;
+	| EXPRCHECK     : exprCheck       : CheckKind; 
+			  checkVar, 
+			  arrVar	  : VarNode;
+			  checkExpr       : ExprNode; 
+			  checkPtr        : PointerKind;
+			  checkVariant    : VariantNode; 
+			  checkType       : TypeNode;
+			  checkLower, 
+			  checkUpper      : integer;
+	| EXPRRANGE     : exprRangeIndex, 
+			  exprRangeCount  : ExprNode;
+	| EXPRSAVE      : exprSaveVar     : VarNode; 
+			  exprSave        : ExprNode;
+        | EXPRFORMER    : exprFormer      : FormerNode;
+	| EXPRDESCRIPTOR: descripMode     : EvalMode;
+			  descripBase	  : ExprNode;
+			  descripCount    : cardinal;
+			  descrips        : ExprList;
+	| EXPRINLINE    : inlineProc      : ProcNode; 
+			  inlineBody      : StmtList;
+                          inlineParams    : ExprList; 
+			  inlineReturn    : LabelNumber;
+                          inlineFormals   : InlineParamList; 
+			  inlineVars      : VarList;
+			  inlineResultVar : VarNode;
+			  inlineResult    : ExprNode;
+	end;
+    end;
+    ExprListRec = record
+	first, last : ExprNode;
+    end;
+
+    StmtKind = (STMTNONE, STMTASSIGN, STMTPROC, STMTIF, STMTCASE, 
+		STMTWHILE, STMTREPEAT, STMTLOOP, STMTFOR, STMTWITH, STMTEXIT, 
+		STMTRETURN, STMTINLINE, STMTSTMTS
+$if pascal then
+		, STMTGOTO, STMTLABEL
+$end
+		);
+    StmtKindSet = set of StmtKind;
+    StmtNodeRec = record
+	next 	   : StmtNode;
+	bad        : boolean;
+	fileName   : String;
+	lineNumber : integer;
+	case kind  : StmtKind of
+$if pascal then
+	| STMTGOTO   : OOB		: boolean;
+	    	       targetLabel      : LabelNode;
+	| STMTLABEL  : label		: LabelNode;
+$end
+	| STMTASSIGN : lhs, 
+		       rhs		: ExprNode; 
+		       lhsType		: TypeNode;
+		       assignOp		: Token;
+		       assignSizeCheck  : ExprNode;
+	| STMTPROC   : proc		: ExprNode; 
+		       params		: ExprList;
+	| STMTIF     : ifCond		: ExprNode; 
+		       thenList, 
+		       elseList	: StmtList;
+	| STMTWHILE  : whileCond	: ExprNode; 
+		       whileBody	: StmtList;
+		       whilePreEval     : ExprList;
+	| STMTREPEAT : repeatCond       : ExprNode; 
+		       repeatBody       : StmtList;
+	       	       repeatPreEval    : ExprList;
+	| STMTLOOP   : loopBody		: StmtList; 
+		       loopPreEval      : ExprList;
+	| STMTFOR    : forIndexName     : String;
+		       forFrom, 
+		       forTo, 
+		       forBy		: ExprNode;
+		       forIndexVar, 
+		       forLimitVar, 
+		       forIncVar	: VarNode;
+		       forLimitCheck    : ExprNode;
+		       forWillExecute   : boolean;
+		       forBody  	: StmtList; 
+		       forPreEval	: ExprList; 
+		       forIndexType 	: TypeNode;
+	| STMTWITH   : withQual 	: ExprNode; 
+	    	       withQualNode 	: WithQualNode;
+		       withPtrVar       : VarNode;
+		       withBody 	: StmtList;
+	| STMTRETURN : returnVal 	: ExprNode;
+		       inlineExpr       : ExprNode;
+		       inlineStmt	: StmtNode;
+		       inlineVarExpr    : ExprNode;
+	| STMTCASE   : caseSel		: ExprNode;
+		       cases		: CaseList;
+		       caseTree 	: CaseTreeNode; 
+		       caseElse 	: StmtList;
+	| STMTEXIT   : exitKind 	: StmtKind;
+        | STMTINLINE : inlineProc       : ProcNode; 
+		       inlineBody       : StmtList;
+		       inlineParams     : ExprList; 
+		       inlineFormals    : InlineParamList;
+		       inlineVars       : VarList; 
+		       inlineReturn     : LabelNumber;
+        | STMTSTMTS  : stmts		: StmtList;
+	end;
+    end;
+    StmtListRec = record
+	first, last : StmtNode;
+    end;
+    ParamKind = (PARAMCONST, PARAMVAR, PARAMVALUE,
+		PARAMARRAYCONST, PARAMARRAYVAR, PARAMARRAYVALUE,
+		PARAMVALUERESULT);
+    ParamKindSet = set of ParamKind;
+    ParamNodeRec = record
+	next 	  : ParamNode;
+	name 	  : String;
+	paramType : TypeNode;
+	paramVar  : VarNode;
+	kind 	  : ParamKind;
+	docopy 	  : boolean;
+	reference : boolean;
+    end;
+    ParamListRec = record
+	first, last : ParamNode;
+    end;
+
+$if pascal then
+    LabelNodeRec = record
+	next		: LabelNode;    (* next oob target in this proc *)
+	labelName       : String;
+	OOBIndex	: integer;	(* -1 means not target of oob goto *)
+	proc		: ProcNode;
+    end;
+
+    LabelListRec = record
+	first, last : LabelNode;
+    end;
+
+    FileVarNodeRec = record
+	next	    : FileVarNode;
+	fileVar     : VarNode;
+    end;
+    
+    FileVarListRec = record
+	first, last : FileVarNode;
+    end;
+$end
+
+    IdentNodeRec = record
+	next : IdentNode;
+	name : String;
+    end;
+    IdentListRec = record
+	first, last : IdentNode;
+    end;
+
+    ImportNodeRec = record
+	next 	   : ImportNode;
+	fileName   : String;
+	lineNumber : integer;
+	saveModule : ModuleNode;
+	saveScope  : Scope;
+	fromIdent  : String;
+	idents     : IdentList;
+	searchList : IdentList;
+	currSearch : IdentNode;
+    end;
+    ImportListRec = record
+	first, last : ImportNode;
+    end;
+
+    ImportedNodeRec = record
+	next : ImportedNode;
+	fromModule : ModuleNode;
+	sym : Symbol;
+    end;
+    ImportedListRec = record
+	first, last : ImportedNode;
+    end;
+
+    ConstSetNodeRec = record
+	next : ConstSetNode;
+	lower, upper : ConstNode;
+    end;
+    ConstSetListRec = record
+	first, last : ConstSetNode;
+    end;
+    ExprSetNodeRec = record
+	next : ExprSetNode;
+	lower, upper : ExprNode;
+    end;
+    ExprSetListRec = record
+	first, last : ExprSetNode;
+    end;
+    CaseNodeRec = record
+	next 	   : CaseNode;
+	pcodeLabel : LabelNumber;
+	labels 	   : ExprSetList;
+	stmts 	   : StmtList;
+    end;
+    CaseListRec = record
+	first, last : CaseNode;
+    end;
+    CaseTreeNodeRec = record
+	lower, higher : CaseTreeNode;
+	first, last   : HugeInteger;
+	caseNode      : CaseNode;
+    end;
+
+    ConstSetType = set of [0..MAXSETSIZE];
+    SetValueRec = record
+	setType : TypeNode;
+	value   : ConstSetType;
+    end;
+
+    CodeNodeRec = record
+	next      : CodeNode;
+	stmts 	  : StmtList;
+    end;
+    CodeListRec = record
+	first, last : CodeNode;
+    end;
+
+    GlobalVarNodeRec = record
+	next	     : GlobalVarNode;
+	number       : integer;
+	size	     : MemoryOffset;
+	globalName   : String;
+	extern       : GlobalSymKind;
+	defineMemory : boolean;
+        shared       : boolean;
+        used	     : boolean;
+	value        : FormerNode;
+    end;
+    GlobalVarListRec = record
+	first, last : GlobalVarNode;
+    end;
+
+    WithQualNodeRec = record
+	next 	    : WithQualNode;
+	implQual    : VarNode;
+	recType	    : TypeNode;
+	baseVar     : VarNode;
+	basePtrType : TypeNode;
+    end;
+
+    ConstParamKind = (CPCONST, CPTYPE, CPVAR);
+    ConstParamNodeRec = record
+	next 	  : ConstParamNode;
+	case kind : ConstParamKind of
+	| CPCONST : cpConst : ConstNode;
+	| CPTYPE  : cpType  : TypeNode;
+	| CPVAR   : cpVar   : VarNode;
+	end;
+    end;
+    ConstParamListRec = record
+	first, last : ConstParamNode;
+    end;
+
+    FormerElementKind = (FECONST, FEFIELD, FEEXPR, FESETEXPR, FESETCONST,
+            FEARRAYCONST, FEARRAYEXPR, FERECORDCONST, FERECORDEXPR,
+	    FEENUMNAMETABLE);
+    FormerNodeRec = record
+        next		: FormerNode;
+        formerType      : TypeNode;
+        formerTypeName  : IdentList;
+        value		: FormerElementList;
+        kind		: FormerElementKind;
+    end;
+    FormerElementNodeRec = record
+        next	    : FormerElementNode;
+        case kind   : FormerElementKind of
+        | FECONST       : tagsConst     : ConstSetList; 
+			  valueConst    : ConstNode;
+        | FEFIELD       : tagField      : String; 
+			  valueField    : ConstNode;
+        | FEARRAYCONST  : indexConst    : ConstSetList; 
+		          arrayConst    : ConstNode;
+        | FERECORDCONST : recordField   : FieldNode; 
+			  recordConst   : ConstNode;
+        | FESETEXPR     : setConst      : ConstSetList; 
+			  setExpr       : ExprSetList;
+	end;
+    end;
+    FormerElementListRec = record
+        next : FormerElementList;
+        first, last : FormerElementNode;
+    end;
+
+    InlineParamNodeRec = record
+        next    : InlineParamNode;
+        kind    : InlineValueKind;
+        formal  : VarNode;
+    end;
+    InlineParamListRec = record
+        next : InlineParamList;
+        first, last : InlineParamNode;
+    end;
+
+    ExitStatus = record
+        loopActive, 
+	forActive, 
+	repeatActive, 
+	whileActive     : boolean;
+        innermostLoop   : StmtKind;
+    end;
+
+(* Optimization stuff *)
+    TempNumber = integer;
+    OptBlockLevel = [0..MAXOPTBLOCKLEVEL];
+    OptUsage = (OUSEINDIVIDUAL, OUSEGENERATE, OUSEFIRST, OUSEAFTERFIRST,
+		OUSEINDUCTION);
+    OptCost = (COSTNONE, COSTCONTAINEDLOOP, COSTCONTAINEDCSE, COSTLOOP, COSTCSE);
+    OptCostSet = set of OptCost;
+
+    OptNodeRec = record
+	parent 	    	: ExprNode;
+	nextActive, 
+	prevActive  	: OptNode;
+	nextAll, 
+	prevAll     	: OptNode;
+	nextClass, 
+	prevClass   	: OptNode;
+	nextCongruent, 
+	prevCongruent, 
+	rootCongruent 	: OptNode;
+	nextEqual, 
+	prevEqual, 
+	rootEqual 	: OptNode;
+	marked, 
+	joinMark, 
+	purged, 
+	removed,
+	eligible, 
+	ineligible,
+	tailRecursion, 
+	loopConsidered 	: @size 1 @align 1 boolean;
+	cost 		: @size 8 @align 8 OptCost;
+	usage 		: @size 8 @align 8 OptUsage;
+	createLevel, 
+	markLevel, 
+	joinMarkLevel 	: OptBlockLevel;
+	uniqueId 	: integer;
+	containedNonTrivial : OptNode;
+	expr 		: ExprNode;
+	(* only meaningful in rootEqual *)
+	tempNumber 	: TempNumber;
+	loopNest 	: integer;
+	neededCount, 
+	referencedCount, 
+	usedCount 	: cardinal;
+	(* only accurate in rootCongruent *)
+	defineTime 	: OptTime;
+	inductionVar 	: VarNode;
+    end;
+
+var
+    integerTypeNode, realTypeNode, charTypeNode, cardinalTypeNode,
+    bitsetTypeNode, booleanTypeNode, wordTypeNode, byteTypeNode,
+    addressTypeNode, stringTypeNode, ioStringTypeNode,
+    packedCharTypeNode, packedBooleanTypeNode, packedCharConstTypeNode,
+    packedByteTypeNode, cardIntTypeNode, fileTypeNode, 
+    arrayOfCharTypeNode, longrealTypeNode, realConstTypeNode, 
+    charConstTypeNode, processTypeNode : TypeNode;
+
+    @global anyTypeNode, procTypeNode : TypeNode;   (* shared with grammar *)
+    intsetTypeNode, unknownSetTypeNode : TypeNode;
+
+$if pascal then
+    alfaTypeNode, 
+    jmpBufTypeNode      : TypeNode;
+    fnilProcNode	: ProcNode;
+    getProcNode		: ProcNode;
+    putProcNode		: ProcNode;
+    unitProcNode	: ProcNode;
+    longfloatProcNode   : ProcNode;
+    read4ProcNode, read8ProcNode, readeProcNode, readcProcNode : ProcNode;
+    writecProcNode, fputcProcNode, writefProcNode, fprintfProcNode,
+    writesProcNode, fwriteProcNode, writelnProcNode,
+    maxProcNode, minProcNode, namProcNode : ProcNode;
+
+    outputDeclared, inputDeclared : boolean;    (* program foo(input, output) *)
+    outputString, inputString : String;
+    programFileNameList     : IdentList;    (* file names in PROGRAM heading *)
+    programFileVarList	    : FileVarList;  (* file vars in PROGRAM heading *)
+$end
+    indexableTypes : DataTypeSet;
+
+    generateBlockNumber : BlockNumber;
+    currScope		: Scope;
+    globalModule, currModule : ModuleNode;
+    globalProc, currProc : ProcNode;
+    builtinScope	: Scope;
+    withQualList	: WithQualNode;
+    globalPortList      : PortList;
+
+    exitStatus		: ExitStatus;
+
+    packOrder		: PackOrder;
+    constBYTESIZE       : ConstNode;
+
+    currLine		: integer;
+    currFile		: String;
+    rootFile		: String;	  (* Name of root file being compiled. *)
+
+    stringDataType      : array DataType of String;
+
+procedure DumpSymbols();
+
+procedure StartScope (open : boolean) : Scope; 
+
+procedure OpenScope (scope : Scope); 
+
+procedure EndScope(); 
+
+procedure DefineSymbol (var sym : Symbol; name : String; scope : Scope;
+			symCase : SymbolCase; kind : SymbolKind) : boolean; 
+
+procedure LookUpSymbol (name : String; scope : Scope) : Symbol; 
+
+procedure QualifiedName (names : IdentList) : Symbol; 
+
+(* grammar+ *) procedure @external TypeOf (names : IdentList) : TypeNode; 
+
+procedure Port(sym : Symbol; scope : Scope) : Symbol; 
+end Symbols.

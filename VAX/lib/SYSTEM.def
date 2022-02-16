@@ -1,0 +1,156 @@
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+DEFINITION MODULE SYSTEM;
+
+(* This is a dummy definition module to indicate what is in the		    *)
+(* the pseudo-module SYSTEM.  Note that all identifiers here are	    *)
+(* recognized regardless of case.					    *)
+
+(*********************)
+(* Numeric Constants *)
+(*********************)
+
+CONST
+    MININT      = -(2^31);
+    MAXINT      = 2^31-1;
+
+    MINUNSIGNED = 0;
+    MAXUNSIGNED = 2^32-1;
+
+    MINCARD     = 0;
+$IF standard THEN
+    MAXCARD     = MAXUNSIGNED;  (* -s option *)
+$ELSE
+    MAXCARD     = MAXINT;       (* default   *)
+$END
+
+    MINREAL     = largest negative real;
+    MINPOSREAL  = minimum positive real;
+    MAXREAL     = largest positive real;
+
+    MINLONGREAL    = largest negative longreal;
+    MINPOSLONGREAL = minimum positive longreal;
+    MAXLONGREAL    = largest positive longreal;
+
+(******************)
+(* Bytes and Word *)
+(******************)
+
+CONST
+    BITSPERWORD  = 32;
+    BYTESPERWORD =  4;
+    BITSPERBYTE  = BITSPERWORD DIV BYTESPERWORD;
+ 
+    LEASTSIGBIT  =  0;
+    MOSTSIGBIT   = 31;
+
+TYPE
+    WORD;		    (* parameter compatible with anything <= 1 word *)
+    BYTE = @SIZE 8 WORD;    (* parameter compatible with anything <= 1 byte *)
+
+
+(***********************)
+(* Addresses and Sizes *)
+(***********************)
+
+CONST
+    BITSPERUNIT = 8;	    (* machine dependent: size of addressable unit  *)
+
+TYPE
+    UNIT    = BYTE;	    (* machine dependent: addressing unit	    *)
+    ADDRESS = POINTER @NOCHECK TO WORD;     (* compatible with all pointers *)
+
+PROCEDURE ADR(VAR v : ARRAY OF BYTE) : ADDRESS;
+    (* Returns the address of the specified variable *)
+
+PROCEDURE SIZE(VAR v : ARRAY OF BYTE) : CARDINAL;
+    (* Returns the size in addressing units of the specified variable *)
+PROCEDURE TSIZE(TYPE T {; CONST tag : TagConstant}) : CARDINAL;
+    (* Returns the size in addressing units of the specified type *)
+
+PROCEDURE BITSIZE(VAR v : ARRAY OF BYTE) : CARDINAL;
+    (* Returns the size in bits of the specified variable *)
+PROCEDURE TBITSIZE(TYPE T {; CONST tag : TagConstant}) : CARDINAL;
+    (* Returns the size in bits of the specified type *)
+
+PROCEDURE BYTESIZE(VAR v : ARRAY OF BYTE) : CARDINAL;
+    (* Returns the size in bytes of the specified variable *)
+PROCEDURE TBYTESIZE(TYPE T {; CONST tag : TagConstant}) : CARDINAL;
+    (* Returns the size in bytes of the specified type *)
+
+PROCEDURE WORDSIZE(VAR v : ARRAY OF BYTE) : CARDINAL;
+    (* Returns the size in words of the specified variable *)
+PROCEDURE TWORDSIZE(TYPE T {; CONST tag : TagConstant}) : CARDINAL;
+    (* Returns the size in words of the specified type *)
+
+
+(**************)
+(* Coroutines *)
+(**************)
+
+PROCEDURE NEWPROCESS(proc    : PROCEDURE;
+                     base    : ADDRESS;
+                     size    : CARDINAL;
+                 VAR process : PROCESS);
+    (* Create a coroutine to execute procedure proc using a stack starting
+       at base, of size addressing units.  Return coroutine descriptor in
+       process.
+    *)
+
+PROCEDURE TRANSFER(VAR current, new : PROCESS);
+    (* Save the current coroutine state in current and resume the coroutine
+       state stored in new.
+    *)
+
+
+(*****************)
+(* Miscellaneous *)
+(*****************)
+
+procedure CPUTime() : Cardinal;
+    (* Returns the accumulated program CPU time in milliseconds *)
+
+END SYSTEM.
+

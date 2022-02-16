@@ -1,0 +1,203 @@
+definition module Decls;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+
+from Strings import
+    String;
+
+from Tokens import
+    Token;
+
+from Symbols import
+    ConstNode, TypeNode, GlobalSymKind, VarNode, VarList, MemoryType, 
+    ModuleNode, StmtList, IdentList, ProcNode, ParamList, IdentNode, 
+    Symbol, FormerNode, FormerElementList;
+
+$if modula2 then
+from Symbols import ImportNode, Scope;
+$end
+
+var
+    standardExportFlag  : boolean; (* auto export all in def modules *)
+    adviseFlag		: boolean; (* tell what ids imported are used *)
+
+procedure InitGlobalModule(); 
+
+$if modula2 then
+(* grammar *) procedure @external GetDefinitionModule(mn : ModuleNode);
+
+(* grammar *) procedure @external GetInlineImpl(const mn : ModuleNode);
+
+(* grammar *) procedure @external ReadImport(imp : ImportNode) : ImportNode; 
+
+(* grammar *) procedure @external ImportDecl(fromIdent : String; 
+					     idents    : IdentList) 
+	: ImportNode; 
+
+(* grammar+ *) procedure @external ProcessImport(imp      : ImportNode; 
+						 complain : boolean);
+
+(* grammar+ *) procedure @external ExportDecl(idents : IdentList; 
+					      qualToken : Token); 
+
+(* grammar *) procedure @external ExportAll();
+
+(* grammar *) procedure @external ExportMissing();
+
+procedure ProcessExports(mn : ModuleNode);
+
+(* grammar *) procedure @external SetNoInit();
+
+(* grammar *) procedure @external SetGlobalProcName(const proc : ProcNode; 
+					            const name : ConstNode);
+
+type
+    ScanModuleNode      = pointer to ScanModuleNodeRec;
+    ScanModuleNodeRec   = record
+        saveScope   : Scope;
+        saveModule  : ModuleNode;
+        theModule   : ModuleNode;
+    end;
+
+(* grammar *) procedure @external ContinueModule(name : String) 
+	: ScanModuleNode;
+
+(* grammar *) procedure @external DisContinueModule(smn : ScanModuleNode; 
+						    body : StmtList; 
+						    name : String);
+
+(* grammar *) procedure @external EndImplDef(name : String);
+
+$else (* pascal *)
+
+(* grammar *) procedure @external MakeExternal(proc : ProcNode);
+
+(* grammar *) procedure @external DefineLabel(value : ConstNode);
+
+(* grammar *) procedure @external ProcessFileList(fileNameList : IdentList);
+
+$end
+
+(* grammar+ *) procedure GlobalName(name      : String; 
+				    theModule : ModuleNode; 
+				    proc      : ProcNode) : String;
+
+(* grammar+ *) procedure @external DefineConst(name : String; value : ConstNode); 
+
+(* grammar+ *) procedure @external DefineType(name : String; value : TypeNode); 
+
+(* grammar *) procedure @external OpaqueWithSize(
+	name : String; size : ConstNode) : TypeNode;
+
+procedure DefineVar(const name       : String;
+		          varType    : TypeNode;
+		    const mt	     : MemoryType;
+		    const global     : GlobalSymKind;
+		    const initial    : FormerNode): VarNode;
+
+procedure DefineVarInProc(const name    : String;
+			  const varType : TypeNode;
+			  const mt      : MemoryType;
+			  const global  : GlobalSymKind;
+			  const initial : FormerNode;
+			  const proc    : ProcNode) : VarNode;
+
+procedure AddToVarList(list : VarList; newOne : VarNode) : VarList;
+
+(* grammar *) procedure @external DefineVarList(
+			idList      : IdentList; 
+		        varType     : TypeNode;
+			global      : Token;
+			shared      : Token;
+			initial     : FormerElementList;
+			externName  : ConstNode);
+
+(* grammar+ *) procedure @external DefineModule(
+	name : String; 
+	kind : Token) : ModuleNode; 
+
+(* grammar+ *) procedure @external EndModule(
+	mn : ModuleNode; body : StmtList; name : String); 
+
+(* grammar+ *) procedure @external DefineProc(
+	name : String; global : Token): ProcNode; 
+
+(* grammar *) procedure @external AddTypeToProc(
+	proc : ProcNode; procType : TypeNode): ProcNode;
+
+(* grammar+ *) procedure @external EndProc(
+	proc : ProcNode; body : StmtList; name : String); 
+
+(* grammar *) procedure @external ProcType(
+	paramList : ParamList; funcType : TypeNode) : TypeNode;
+	
+(* grammar *) procedure @external MakeParamList(
+	kindToken : Token; idents : IdentList;
+	paramType : TypeNode) : ParamList; 
+
+(* grammar *) procedure @external AppendParamList(some, more : ParamList) 
+	: ParamList; 
+
+(* grammar+ *) procedure @external AddToIdentList (
+	list : IdentList; newOne : IdentNode) : IdentList;
+	
+(* grammar+ *) procedure @external MakeIdent (name : String) : IdentNode; 
+
+procedure CheckEqualType(sym : Symbol; tn : TypeNode; portingSymbol : boolean); 
+
+procedure CheckEqualProc(sym1, sym2 : Symbol); 
+
+procedure CheckEqualProcType(proc : ProcNode; procType : TypeNode); 
+
+procedure CheckModule(mn : ModuleNode); 
+
+procedure CheckProc(pn : ProcNode);
+
+procedure SameTypeParam(dst, src : TypeNode) : boolean; 
+
+procedure OutputImports(); 
+
+end Decls.

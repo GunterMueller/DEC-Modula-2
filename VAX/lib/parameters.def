@@ -1,0 +1,69 @@
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+(* This module provides clean access to the command parameters *)
+
+DEFINITION MODULE parameters;
+
+VAR
+    (* NumParameters = argc = number of parameters counting name of the *)
+    (*  program (the 0th parameter) *)
+    NumParameters : CARDINAL;
+
+(* GetParameter copies the num'th parameter (starting at 0, which is the *)
+(*  program name) into the value array.  It sets length to the number of *)
+(*  characters stored in the array, < 0 if there aren't that many parameters *)
+(*  If there is room in value, it adds a 0C at the end *)
+PROCEDURE GetParameter(num : CARDINAL; VAR value : ARRAY OF CHAR;
+	VAR length: INTEGER);
+
+(* GetEnvironment copies the value of the environment variable with the *)
+(*  specified name into the value array.  It sets length to the number of *)
+(*  characters stored in the array, < 0 if that variable doesn't exist. *)
+(*  The value is the part after the = in the environment string. *)
+(*  If there is room in value, it adds a 0C at the end *)
+PROCEDURE GetEnvironment(CONST name : ARRAY OF CHAR; VAR value : ARRAY OF CHAR;
+	VAR length: INTEGER);
+
+END parameters.

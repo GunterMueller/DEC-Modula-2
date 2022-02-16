@@ -1,0 +1,905 @@
+.ND
+.if n .ds lq \&"\"
+.if n .ds rq \&"\"
+.if t .ds lq ``
+.if t .ds rq ''
+.TL
+A Portable Optimizing Compiler for Modula-2
+.AU
+Michael L. Powell
+.AI
+Digital Equipment Corporation
+Western Research Laboratory
+4410 El Camino Real
+Los Altos, CA  94022
+.LP
+.sp 1i
+.LP
+.ce
+\f2ABSTRACT\f1
+.PP
+A portable compiler for the Modula-2 programming language has been implemented
+with a simple, machine independent optimizer.
+The front end of the compiler generates a dialect of P-code,
+and the back end translates the P-code into machine language.
+The compiler fits well in the Unix environment.
+.PP
+The design philosophy of the compiler is \*(lqbest simple\*(rq.
+Whenever possible, design decisions were made to favor the simplest alternative
+that got us most of what we wanted.
+Benchmark results show that the code quality is comparable to or better than
+other
+good compilers.
+.NH 1
+Introduction
+.PP
+When we investigated the alternatives for a operating system and application
+development language,
+Modula-2 [Wirth\ 82] stood out as a language of good compromises:
+it has adequate facilities for building large software systems;
+it has type safety and simplicity comparable to Pascal;
+it has system programming features comparable to C;
+yet it is a small enough language to allow our research group to
+support a compiler for it.
+Unfortunately, the compilers for Modula-2 that were available in June 1983 were
+unacceptable due to slow compilation speed, poor code quality,
+and restrictive licenses.
+Therefore, we decided to build our own compiler.
+.PP
+Although good compiler technology has been available for some time,
+many compilers in general use are large and complex,
+depend on particular processors and operating systems,
+or generate inefficient code.
+Some compilers have more than one of these flaws.
+.PP
+Compilers for new languages often "leave optimization for later",
+which hampers the widespread adoption of the language.
+Among portable compilers, it is common to omit optimization
+as too machine dependent.
+There are efforts underway to alleviate the situation, notably
+PQCC [Wulf 80].
+Until such tools are available, however, it is necessary to manually
+produce the best compilers we can.
+.PP
+The philosophy of \*(lqbest simple\*(rq is a greedy one.
+It aims for the most payback from the least investment, sacrificing perfection
+and completeness in favor of practicality.
+Applying the best simple philosophy to compiler design, we chose to
+use existing software and tools when possible.
+When creating new software, we designed for the common cases rather than the
+extremes.
+The result was a useful compiler that was developed in a short time.
+.NH 2
+Goals of the compiler
+.PP
+When the decision was made to develop a compiler from scratch, we identified
+the following goals:
+.IP "Make the compiler retargetable"
+.br
+We plan to run Modula-2 programs on a variety of processors.
+Therefore, adding a new code generator should not be a lot of work,
+and the software base should be portable.
+.IP "Use existing ideas and software"
+.br
+Because of limited development and maintenance personnel, the compiler
+should be built on existing software and ideas as much as possible,
+and should be small and simple.
+.IP "Produce code compatible with Pascal and C"
+.br
+We expect to use Modula-2 to develop applications under Unix as well as
+modifications to the operating system itself.
+Since we have significant amounts of Pascal and C software in place, it is
+essential that the compiler generate code that is compatible with
+Berkeley Pascal and Unix C routines.
+.IP "Compile and run efficiently"
+.br
+If Modula-2 is to replace Pascal and C, the compile time and resulting
+code quality must be as good as the competing compilers.
+To provide an incentive for conversion, it would be best if Modula-2
+were better than the competition.
+.PP
+The resulting compiler should be a reasonable research vehicle in a number
+of ways.
+We will be generating prototype software,
+we will be experimenting with language features,
+and we will be investigating processor architectures.
+Thus the goals above are ordered according to their importance.
+.PP
+There were some common goals that we did not select.
+We did not try to achieve a high degree of integration into a
+particular operating system.
+Our Modula-2 environment does not contain a large number of library modules,
+and thus does not provide a sophisticated runtime environment.
+Nonetheless, the simplicity and modularity of Modula-2 has made it fit well
+into the Unix environment.
+.PP
+We did not seek code performance comparable to the best compilers.
+Historically, Unix compilers have done little optimization.
+Although we wanted efficient code, we did not want to spend a lot of effort
+making an optimizer.
+Nonetheless, our simple optimizer
+generates surprisingly good code for a variety of benchmarks.
+.PP
+We did not try to build a particularly portable compiler.
+P-code was used because it is a flexible code generation technique with
+which we were experienced.
+The compiler was written in Pascal to make development easier, rather than in
+Modula-2, which might have made bootstrapping to other machines easier.
+We do expect to translate the compiler into Modula-2 eventually, although its
+being in Pascal has eliminated the problem of recursive bugs.
+.NH 2
+Modula-2
+.PP
+From
+the point of view of a running program, Modula-2 is almost identical
+to Pascal [Jensen\ and\ Wirth\ 74].
+The syntax of Modula-2 is similar to Pascal
+on the surface, but is different in a fundamental way.
+Modula-2 permits statements to reference identifiers that are defined later
+in the compilation.
+Therefore, Modula-2 requires a multi-pass compiler.
+.PP
+Resolving identifiers is also more complex in Modula-2 than in Pascal.
+Modula-2 supports closed scopes and explicit imports and exports.
+The language defines a mechanism for separate compilation, and some provision
+must be made to ensure the consistency of separately compiled modules.
+That task is delegated to an intermodule checker that is run before the modules
+are linked together.
+.PP
+The power provided by the Modula-2 language is comparable to that of C
+[Kernighan\ and\ Ritchie\ 78].
+The programmer has the ability to manipulate memory and addresses independent
+of the type system, and can treat any value as any type if the appropriate
+type change operator is specified.
+In the absence of such type violations, Modula-2 is as type safe as Pascal.
+Thus, Modula-2 is adequate for system programming, but provides type safety
+except where it is explicitly overridden.
+.PP
+Although the motivation for doing so is different,
+Modula-2 encourages optimization by eliminating or restricting features
+that make optimization difficult.
+The omission of
+.I goto
+statements
+eliminates the need to worry about multiple entries to a loop or other
+block.
+Since the value of the index of a
+.I for
+loop is not accessible outside the loop,
+loop induction can be done easily.
+Pointers are usually typed, as in Pascal,
+so potential aliasing is reduced.
+.NH 1
+Overview of the compiler
+.PP
+The compiler is divided into three programs:
+The front end reads a Modula-2 program and generates P-code.
+The back end translates P-code into VAX machine language.
+The intermodule checker checks the object modules for consistency
+before linking.
+As with the other Unix compilers,
+the Unix assembler is used to generate an object module for the program
+and the Unix loader is used to link object modules together.
+.PP
+The front end consists of 3 or 5 passes, depending on whether optimization is
+requested.
+The first two passes are required to parse Modula-2.
+The first pass processes declarations; the second pass processes statements.
+The first optimization pass performs most of the optimizations.
+The second optimization pass collects reference counts in order
+to assign registers.
+The last pass of the front end generates P-code.
+.NH 2
+Parsing
+.PP
+The first pass of the compiler uses a bottom-up parser generated by YACC
+[Johnson\ 75].
+It is driven by a simple scanner and constructs a tree representation of the
+program.
+Declarations are processed, variables are allocated, and a type graph is built.
+Since statements may make forward references to subsequent procedures and
+variables,
+names are not resolved in statements on the first pass.
+.PP
+As the second pass walks over the tree, it resolves names in statements,
+checks the types of operands, and performs
+some transformations on the expressions.
+One transformation, for instance, converts a subscript expression into the
+corresponding address arithmetic.
+After the second pass, the tree has been completely processed and is ready
+for code generation.
+.NH 2
+Optimization
+.PP
+The optimization passes modify and extend the tree structure representation of
+the program.
+Common subexpressions are identified and connected together.
+Expressions that are to be moved out of loops are copied into loop headers.
+.PP
+Originally, the optimizer was a single pass.
+A second pass was added to compute reference counts on local variables and
+optimizer temporaries in order to improve register allocation.
+.NH 2
+Code generation
+.PP
+The code generator walks over the tree, emitting P-code to implement the
+desired computation.
+Most nodes in the tree produce one or two P-code instructions.
+.PP
+The code generator also outputs debugging information, marking source lines
+and specifying the types of variables.
+The same symbol table information for global symbols is used
+in intermodule checking.
+.NH 2
+P-code translation
+.PP
+The P-code translator does a one-pass, static interpretation of the P-code
+instructions.
+It simulates the hypothetical stack machine, and outputs VAX instructions
+to accomplish the same computation.
+.NH 2
+The Intermodule Checker
+.PP
+The intermodule checker examines the types of the identifiers exported and
+imported by different modules.
+It examines the type structure of each identifier, and complains if two
+modules disagree.
+The intermodule checker optionally will recompile any modules that are
+inconsistent.
+Thus, it is possible to do the minimum recompilation required by a change.
+.NH 1
+The Optimizer
+.PP
+The optimizations implemented were those we expected to have the greatest
+impact on well-written Modula-2 programs.
+Our intention was not to make the optimizer safe for arbitrary programs, but
+to do a good job of optimizing those programs that could be safely handled.
+For example, in Modula-2,
+aliasing may be introduced by taking the address of a local
+variable and storing it in a pointer.
+In Modula-2, such programs must import functions and types from
+a module called "system".
+Although the optimizer will safely handle any program that does not import
+from system,
+it does not make worst case assumptions for those programs that do.
+.PP
+A survey of the literature on optimization
+[Cocke and Schwartz 70,
+Wulf et al. 75,
+Aho and Ullman 77,
+Muchnick and Jones 81,
+Anklam et al. 82]
+uncovers many techniques that are hard to understand, harder to implement,
+more general than necessary, and of marginal value.
+Our approach was to do the most profitable machine-independent
+optimizations in the simplest way.
+.PP
+In contrast to most schemes, we used the program tree directly
+for optimization, rather than first converting to instruction tuples.
+The program tree contains type information and defines control structures
+in a convenient way.
+Although other optimization techniques are more general (e.g., a
+.I while
+loop that is functionally the same as a
+.I for
+loop can be treated as a
+.I for
+loop), our technique works adequately for programs that are properly written
+(e.g., when
+.I for
+loops are written as
+.I for
+loops).
+.PP
+The optimizer works with expressions and not statements.
+Redundant computations that span expression boundaries are not recognized.
+Recognizing such opportunities for optimization was essential in languages
+like FORTRAN, which required constant values to be stored in variables.
+Well-written Modula-2 programs, on the other hand,
+will rarely have statements that can be moved out of loops.
+.NH 2
+Standard optimizations
+.PP
+The main strategy for optimization is linear nested region analysis
+[Cocke and Schwartz 70, Wulf et al. 75].
+This algorithm walks over the program tree, identifying expressions that
+have the same form, and, using the nesting level and some marking policies,
+decides which expressions are necessarily equal.
+There is no need to do flow analysis, since all loops and branches
+are identified by specific language statements.
+Most important, it is necessary neither to compute use and definition
+information (the so-called \f2ud-chains\f1),
+nor to manipulate sets to solve data flow equations.
+.PP
+The core algorithm of linear nested region analysis uses value numbers to
+identify expressions that may be equal.
+As the tree is scanned forward, old numbers are invalidated when side-effects
+could change the value of an expression.
+Interesting things happen at conditional statements, since values invalidated
+in, for instance, the
+.I then
+part are may still be valid in the
+.I else
+part.
+Loops are interesting in two ways:
+Changes to values later in the loop affect their validity at the beginning
+of the loop (on subsequent iterations).
+Moreover, an expression whose value does not change in the loop may be
+moved out of the loop and evaluated only once.
+.NH 3
+Reducing computation
+.PP
+Common subexpressions are identified and
+assigned to temporary storage locations.
+The number of references to each expression is also stored.
+During code generation, the first encounter of a common subexpression
+causes it to be evaluated and the value saved for subsequent reuse.
+.PP
+Invariant expressions are removed from loops.
+An invariant expression is detected by being an expression whose value is known
+before the loop is entered (using the value-numbering scheme),
+but which is still valid at the end of the loop.
+The tree for the expression is copied out of the loop and a temporary is
+assigned for the duration of the loop.
+During code generation,
+the expression is evaluated once before the loop is entered
+and stored in the temporary for use during the loop.
+The evaluation code is placed such that it is executed only if the expression
+is guaranteed to be evaluated in the loop.
+.PP
+For
+.I for
+loops, the loop index meets the criteria for loop induction analysis.
+Its value is (by the definition of the language) not accessible outside the
+loop, and the index is incremented only once in the loop.
+To avoid allocating additional temporaries, loop induction is performed only
+if all uses of the loop index are similar.
+This permits the resulting induction variable to be the index variable.
+.NH 3
+Register allocation
+.PP
+After the above optimizations had been implemented, the P-code translator was
+not making good use of the registers.
+In fact, it is rare for the normal expression evaluation activity of a program
+to use more than 4 registers at once.
+To improve the usage of the registers,
+the optimizer considers the following for allocation into registers:
+.IP 1)
+subexpression temporaries,
+.IP 2)
+.I for
+loop indices and limit values,
+.IP 3)
+.I with
+statement address expressions,
+.IP 4)
+scalar local variables.
+.PP
+Values of types 1 through 3 cannot be changed by the program explicitly.
+Scalar variables are eligible for allocation into registers
+only if they are never addressed, e.g., by being used as a var parameter.
+This policy makes it so the optimizer never has to update variables for the
+benefit of references through aliases.
+.PP
+A static count of the number of actual references to each value is
+computed.
+Weights are used to make references in loops more important.
+Although we cannot know how many iterations a loop executes,
+we do know that CPU-bound programs tend to spend
+most of their time in inner loops.
+Since the weights (and the expected number of references) grow exponentially
+with the loop nesting, a weight factor of 10 ensures that 
+inner loops will be considered very important.
+Note that it is essential to consider the effect of common subexpression
+elimination and loop invariant motion in computing the counts, since what
+appears to be many references in the source program
+may yield only a few references in the object code.
+.PP
+The front end does not know how many registers will be available for these
+values.
+Therefore, it simply sorts them in order of usage, and expects the back end
+to put them into registers in the order they are allocated.
+To avoid allocating infrequently used values into registers (since there is
+some cost to saving and restoring registers at procedure boundaries),
+values that are used twice or less in a procedure are not allocated to
+registers.
+.NH 2
+Low-analysis optimizations
+.PP
+In addition to the above optimizations, which require substantial amounts of
+processing,
+there are several that have insignificant costs but can sometimes pay off well.
+.PP
+Tail recursion elimination avoids directly recursive procedure and
+function calls, replacing them with jumps back into the same procedure or
+function (i.e., recursion is changed to iteration).
+This technique is applicable when the \*(lqlast\*(rq thing that a procedure does
+before returning is call itself.
+For a procedure, "last" means the last statement along some path leading to
+a
+.I return
+statement or the end of the procedure.
+For a function, "last" means that the
+.I return
+statement specifies a recursive
+function invocation.
+One other constraint is that none of the parameters be local variables passed
+as var parameters.
+Detecting both these conditions from the program tree
+is straightforward and requires no usage analysis.
+.PP
+On most processors, the procedure calling sequence
+defines a standard interface between languages.
+As such, it is often more general than required by a particular programming
+language.
+The compiler can detect procedures that are called only by Modula-2 routines
+in the current compilation, and replace the more expensive procedure call
+mechanism with a simpler, faster one.
+.PP
+In languages with nested lexical scopes, some mechanism is required to allow
+access to non-local, non-global variables.
+Global variables are statically allocated, and local variables are accessed
+using a stack pointer.
+Other variables must be accessed using a display (or equivalent mechanism),
+which must be updated on procedure entry and exit.
+In most cases, however, it is not necessary for the display to be updated,
+e.g., if a routine does not contain any nested routines, there can be no
+uplevel references to its variables.
+Therefore, most updates to the display can be avoided.
+.NH 2
+Optimizing checks
+.PP
+Runtime checks are often disabled in production programs because they cost
+so much.
+For example, the P-code translator, written in Berkeley Pascal, runs 3 times
+slower when runtime checks are enabled.
+By optimizing runtime checking, its benefits can be obtained at a fraction of
+the usual cost.
+.PP
+The runtime checks performed by the compiler
+include checking variant tags, subranges,
+subscripts, and pointers.
+The pointer check catches not only bad addresses, but also pointers to
+objects that have been disposed.
+Checks are entered into the expression tree like any other expressions,
+appearing to be unary operators.
+These expressions are often common subexpressions or loop invariants.
+Such expressions are also eligible for loop induction, which could replace
+a subscript check in a loop by checks of the lower and upper bounds of the
+loop index.
+.NH 2
+The tricky parts
+.PP
+There were three areas that were difficult in implementing the optimizer,
+and that were not covered adequately in the published literature.
+These were: determining when to invalidate expressions,
+updating the optimizer's analysis information to reflect its restructuring of
+the tree,
+and deciding when a computation was worth avoiding.
+.PP
+The rule for invalidating expressions is simple to state:
+Invalidate any expression whenever its value may have changed.
+One can choose a conservative policy and ignore possible optimizations,
+or one can choose a liberal policy
+and possibly optimize bugs into correct programs.
+Determining the correct policy requires a thorough analysis of the language.
+Some texts give lists that are only indicative and not exhaustive of the
+possible times when an expression may be changed.
+.PP
+As the optimizer eliminates or moves computations, it is essential that
+it update its analysis statistics.
+For example, an expression moved out a loop may already be a subexpression
+outside the loop, and no computation at loop entry is necessary.
+A common subexpression may contain other common subexpressions.
+Expressions must be processed outside-in in order to make the appropriate
+decisions in one pass.
+.PP
+One reason why a number of optimizing compilers produce less than optimal code
+is that more work is done to avoid some computations than it would have taken
+to perform them.
+One example is saving a value in a register that is used only twice.
+Doing so may require an additional instruction to save the value,
+plus the cost of saving and restoring a register,
+if the calling sequence requires it.
+Our optimizer can be tuned to consider some computations as trivial and not
+worth eliminating.
+.NH 1
+P-code translation and optimization
+.PP
+Our P-code is a dialect of the P-code originally developed for Pascal compilers
+[Nori\ et\ al.\ 73].
+P-code looks like machine language for
+a hypothetical stack machine and has been used
+successfully for portable compilers.
+For example, the Model programming language [Johnson and Morris 76],
+which generates P-code,
+runs on the Cray-1, DEC VAX, Zilog Z8000, and Motorola MC68000 computers.
+The principle features that distinguish this version of P-code from others are
+support for multiple classes of memory and
+specification of types and bit sizes on all operations.
+.PP
+The idea of memory classes and data types was an important addition to P-code
+for optimization purposes.
+Some memory classes may be assigned to registers, or to stack areas with
+short displacements from the frame pointer.
+Some memory classes may be good for particular data types, for example,
+on machines with address or floating point registers.
+The P-code translator can thus put values in the kinds of storage and registers
+that are most suited to them.
+.bp
+.PP
+The P-code translator is a one-pass compiler of P-code into VAX code.
+It performs the compilation by doing a static interpretation of the
+P-code.
+As it performs operations on its simulated stack, it outputs code
+to accomplish the same computation using registers and VAX instructions.
+It tries to choose the best instructions and addressing modes.
+For example,
+it knows that two add instructions are faster than a left shift by two.
+.PP
+The translator does perform some simple analysis of the P-code.
+For example, the statement
+.nf
+.ta .5i 2.2i
+
+k := k + 1;
+
+is rendered in P-code as
+
+lod	i,32,0,t,0,123	load variable k
+ldc	i,32,1	load constant 1
+add	i,32	add k+1
+str	i,32,0,t,0,123	store result in k
+
+and is translated to a VAX instruction
+
+incl	r6	k was in a register
+
+or
+
+incl	20(fp)	k was in memory
+
+.fi
+.LP
+However,
+because the P-code translator is one-pass, there are many optimizations that it
+cannot detect.
+For example, by itself, 
+it could not use an increment instruction on this statement:
+.nf
+
+a[i+j] := a[i+j] + 1;
+
+.fi
+The P-code would contain two evaluations of the address of a[i+j], and the
+translator is not smart enough to combine them.
+However,
+the front end does detect the address of a[i+j] as a subexpression,
+and generates P-code to evaluate it once and use it twice.
+This does allow the back end to use an increment instruction with that address.
+.PP
+Although P-code is machine independent, the P-code translator is inherently
+machine dependent.
+Decisions of what registers and instructions to use to implement a particular
+P-code operation are left entirely to it.
+However, many of the strategies span a wide class of computers, in particular,
+register-oriented ones.
+Thus the global structure of the P-code translator and many of its strategies
+are common to all the implementations, adding a degree of machine independence.
+.NH 1
+Performance
+.PP
+This section discusses the performance of the compiler in two respects.
+First, the Modula-2 compiler is compared to other compilers for the VAX.
+Then, the different levels of optimization are evaluated.
+.NH 2
+Comparison with other compilers
+.PP
+Table 1 shows the run times for a set of benchmarks collected by
+John Hennessy [Hennessy\ 83].
+The programs are:
+.IP \f2Perm\f1. 10
+Generate all permutations of 7 things 5 times (recursive).
+.IP \f2Towers\f1. 10
+Solve Towers of Hanoi (14 discs, recursive).
+.IP \f2Queens\f1. 10
+Solve 8-queens problem 50 times.
+.IP \f2Mm\f1. 10
+Single-precision real 40x40 matrix multiply.
+.IP \f2Intmm\f1. 10
+Integer 40x40 matrix multiply.
+.IP \f2Puzzle\f1. 10
+Forest Baskett's puzzle-solving program.
+.IP \f2Quick\f1. 10
+Quicksort sort of 5000 elements.
+.IP \f2Tree\f1. 10
+Binary tree sort of 5000 elements.
+.IP \f2Bubble\f1. 10
+Bubble sort of 500 elements.
+.IP \f2Fft\f1. 10
+Do 256-point Fast Fourier Transform 20 times.
+.LP
+The compilers are the Modula-2 compiler distributed by Cambridge University
+(the Lilith compiler ported to the VAX),
+the Berkeley Unix Pascal compiler (pc),
+the Berkeley Unix C compiler,
+the DEC VMS Pascal compiler,
+the DEC VMS C compiler,
+the DEC VMS Bliss-32 compiler,
+the DEC VAXELN Pascal compiler,
+John Hennessy's Stanford Pascal compiler,
+and the Modula-2 compiler described in this paper.
+The times are in seconds of CPU time on a DEC VAX 11/780.
+.TS
+l l l l l l l l l l l
+l l l l l l l l l l l
+l n n n n n n n n n n.
+Program	Camb.	Berk.	Unix	DEC	DEC	DEC	VAXElan	Stanf.	DEC
+Name	Mod-2	Pascal	C	Pascal	C	Bliss	Pascal	Pascal	Mod-2
+
+Perm	4.9	2.7	2.6	2.5	2.5	2.5	2.5	2.2	2.0
+Towers	6.1	2.8	2.6	2.6	2.7	2.5	2.6	2.1	1.9
+Queens	2.8	1.6	1.0	1.1	0.7	0.7	0.9	1.5	0.9
+Intmm	4.9	2.2	1.7	1.1	0.8	1.4	0.8	0.7	0.8
+Mm	5.0	2.7	2.2	1.1	1.3	1.4	0.8	0.7	0.9
+Puzzle	24.6	12.9	12.4	6.2	4.9	5.8	6.5	4.9	4.1
+Quick	2.8	1.7	1.2	1.2	0.8	0.8	0.8	1.0	0.8
+Bubble	5.5	3.0	1.7	1.3	1.0	1.1	0.9	1.4	1.0
+Tree	6.7	6.4	6.2	4.1	3.4	3.2	3.8	1.9	1.9
+FFT	9.7	4.8	4.1	2.5	2.6	1.5	1.2	1.8	1.6
+.TE
+.ce
+Table 1.  Benchmarks for various compilers, time in seconds
+.PP
+The Cambridge Modula-2 compiler not only does no optimization, but treats
+a VAX as a stack machine, accounting for its poor code quality.
+The Berkeley Pascal, and Unix C compilers do not perform any
+real optimizations,
+although the Unix peephole optimizer, c2, is invoked.
+The six compilers on the right all attempt to do good optimization.
+The Stanford Pascal compiler,
+the DEC C compiler and the new DEC VAXELN Pascal compiler use, in principle,
+stronger optimization techniques, and occasionally out-perform the Modula-2
+compiler.
+.PP
+It should be noted that
+the VAXELN compiler can optionally expand procedures inline.
+Since none of the other compilers had this facility, this optimization was
+not enabled.
+Nonetheless, inline procedure expansion is an important optimization for
+a language such as Modula-2.
+We are still searching for the \*(lqbest simple\*(rq way to do inline procedure
+expansion.
+.PP
+Surprisingly, the simple optimizer holds its own among much larger and
+more complex compilers.
+Examination of some of the differences between code for different benchmarks
+leads us to several conclusions.
+Stronger optimization techniques did not pay off much in this set of benchmarks.
+The value of constructing flow graphs for languages or programs without
+.I goto
+statements (as well as the payoff from considering all the perverse
+possibilities in languages that do have them) is minimal.
+Substantial improvements were obtained by timing code sequences and
+tuning strategies.
+For example, the P-code translator chooses among several code sequences for
+.I for
+loops, rather than generating a single general one.
+.NH 2
+Effects of optimizations
+.PP
+Table 2 shows the results of different optimizations and the interaction
+between optimization and checking.
+.TS
+l l l l l l l l l
+l l l l l l l l l
+l n n n n n n n n.
+Program	No Opt	Check	Check	Opt	Opt	Opt	Opt	Opt
+Name			Opt	All	No call	No loop	No reg	No ind
+Perm	2.4	3.1	2.7	2.0	2.4	2.0	2.0	2.0
+Towers	2.4	4.2	3.0	1.9	2.3	1.9	2.0	1.9
+Queens	1.0	1.4	1.3	0.9	1.0	0.9	1.0	0.9
+Intmm	1.7	2.6	1.4	1.0	1.1	1.4	1.4	1.0
+Mm	1.7	2.6	1.4	1.0	1.1	1.5	1.4	1.0
+Puzzle	8.5	12.4	6.9	4.1	4.4	6.9	7.2	4.1
+Quick	1.2	1.9	1.5	0.9	0.9	0.9	1.2	0.9
+Bubble	1.7	3.3	2.0	0.9	0.9	1.0	1.7	0.9
+Tree	3.8	4.3	2.1	1.9	2.0	1.9	2.2	1.9
+FFT	3.0	4.4	2.2	1.6	1.7	1.6	2.0	1.6
+.TE
+.ce
+Table 2.  Benchmarks with various options, time in seconds
+.PP
+The column labeled No Opt used no optimization.
+The Check column enabled all runtime checks, and the Check Opt enabled checking
+and performed optimization.
+In most cases, the checked and optimized code was close to or faster than the
+unchecked unoptimized code.
+The column labeled Opt All disabled runtime checks and performed all
+optimizations.
+This column was used for comparison with the other compilers above.
+.PP
+The last four columns show the results when some part of the optimization
+was disabled.
+.I
+No call
+.R
+made all calls be the more expensive external calls.
+This optimization substantially improved only the recursive routines.
+.I
+No loop
+.R
+did not try to move invariants out of loops.
+This optimization improves the routines with inner loops that have multiple
+subscripts.
+.I
+No reg
+.R
+kept all temporaries and variables in memory, although expression
+evaluation was still done in registers.
+This optimization helped all the benchmarks except those that had no variables
+or expressions to put into registers.
+.I
+No ind
+.R
+avoided loop induction analysis.
+This optimization had the least payoff (the difference was less than 0.1 seconds
+in any of the benchmarks).
+One might conclude that the restrictions on our implementation of loop
+induction hampered its usefulness.
+However, the other compilers with no such restrictions fared no better,
+although some of the benchmarks have inner loops suited for induction analysis.
+.PP
+Different benchmarks respond to different optimization techniques.
+For example, the tree sort was the only one with sufficient tail recursion to
+save a significant amount of time.
+Nonetheless, the combination of an improved calling sequence and tail recursion
+elimination made this program run twice as fast.
+Moving invariants out of loops was important only in those programs
+clearly dominated by inner loops.
+The identification of common subexpressions,
+and proper use of registers had an effect on all but the most trivial routines.
+.NH 1
+History
+.PP
+The first version of the compiler and P-code translator
+was written by the author in about four months, with the optimizer taking the
+last six weeks.
+The intermodule checker and debugger interface took another month.
+The compiler has now been in daily use for over six months.
+We have already converted over 40,000 lines of Pascal source to Modula-2,
+and the compiler is being made available for a nominal fee to universities.
+The compiler runs on a DEC VAX under Unix 4.2BSD.
+.PP
+The front end is approximately 1,000 lines of YACC grammar and 20,000 lines
+of Pascal.
+The back end is approximately 6,000 lines of Pascal.
+The intermodule checker is approximately 2500 lines of Modula-2.
+.PP
+Work continues on improving the compiler, although the optimizer is
+not being changed.
+Some language extensions for more general array handling and for better
+control over data representation are being made.
+.PP
+It is hard to claim yet that the compiler is portable,
+since we have not yet ported it.
+However, we are on firm ground, since we have experience porting compilers based
+on P-code, and it is a straightforward process.
+We are in the process of writing a P-code translator for the Motorola M68000
+based on the one for the VAX.
+We expect the compiler to do as well optimizing programs for that machine as
+it does for the VAX.
+.PP
+The compiler front-end has generated intermediate code resembling triples
+for a different back-end, however.
+The code generation phase, which is approximately 10% of the front-end,
+was modified in about two weeks to generate the triples.
+The optimization passes were unchanged except for parameters controlling the
+strategy routines.
+Although we have only simulation results to date,
+the optimizer appears to do a good job on that machine as well.
+.NH 1
+Conclusions
+.PP
+The compiler meets the goals we set.
+We presently link together Pascal, C, and Modula-2 routines in a convenient
+way.
+It appears to be an adequate vehicle for our research work, and works well
+in the Unix environment.
+.PP
+Most optimizers are machine dependent.
+Our optimizer's division into high-level optimization in the front end and
+machine dependent optimization in the back end seems to work well and
+provide an easily retargetable compiler.
+.PP
+Our Modula-2 compiler was built with considerably less effort than the others
+to which it is compared.
+There may be simpler compilers, but we know of none as simple
+that achieves this level of
+performance for this kind of language.
+There may be better optimizers, but the performance difference
+between our simple one and the more complex ones seems small,
+and often is in our favor.
+The philosophy of \*(lqbest simple\*(rq has worked well.
+.NH 1
+Acknowledgements
+.PP
+Thanks to Digital Equipment Corporation Western Research Laboratory for
+providing the facilities for developing this compiler,
+to John Hennessy for providing the benchmark programs,
+to Forest Baskett for converting them to Modula-2 and C,
+and to Brian Reid for converting them to Bliss.
+Benjamin Pierce, Jeff Prisner, and David Wall were the pioneers who
+persevered through the trials of a new language and compiler.
+.bp
+.NH 1
+References
+.IP Hennessy\ 83 5
+.br
+J. Hennessy, Private communication.
+.IP Jensen\ and\ Wirth\ 74 5
+.br
+K. Jensen and N. Wirth,
+.I
+Pascal User Manual and Report,
+.R
+Springer-Verlag, New York, 1974.
+.IP Johnson\ and\ Morris\ 76 5
+.br
+R. Johnson and J. B. Morris,
+\*(lqAbstract Data Types in the Model Programming Language\*(rq,
+SIGPLAN/SIGMOD Conference on Data: Abstraction, Definition, and Structure,
+Salt Lake City, 1976, 36-46.
+.IP Johnson\ 75 5
+.br
+S. Johnson,
+\*(lqYACC\-yet another compiler compiler\*(rq,
+Bell Laboratories, Computer Science Tech. Report 32, Murray Hill, NJ, 1975.
+.IP Kernighan\ and\ Ritchie\ 78 5
+.br
+B. Kernighan and D. Ritchie,
+.I
+The C Programming Language,
+.R
+Prentice-Hall, Englewood Cliffs, NJ, 1978.
+.IP Nori\ et\ al.\ 75 5
+.br
+K. Nori, U. Ammann, K. Jensen, and H. Nageli,
+\*(lqThe Pascal (P) Compiler Implementation Notes\*(rq,
+Institut fur Informatik, Eidgenossiche Technische Hochschule, Zurich, 1975.
+.IP Wirth\ 82 5
+.br
+N. Wirth,
+.I
+Programming in Modula-2,
+.R
+Springer-Verlag, New York, 1982.
+.IP Wulf\ et\ al.\ 75 5
+.br
+W. Wulf
+.I
+et al.
+.R
+.I
+The Design of an Optimizing Compiler,
+.R
+Elsevier North Holland, New York, 1975.
+.IP Wulf\ 80 5
+.br
+W. Wulf,
+\*(lqAn Overview of the Production Quality Compiler-Compiler Project\*(rq,
+.I
+IEEE Computer
+.R
+13, 8 (August 80), 38-49.
+.sp .5i
+.LP
+DEC, VAX, and VMS are trademarks of Digital Equipment Corporation.
+.LP
+Cray-1 is a trademark of Cray Research, Inc.
+.LP
+Z8000 is a trademark of Zilog, Inc.
+.LP
+MC68000 is a trademark of Motorola, Inc.
+.LP
+Unix is a trademark of Bell Laboratories.

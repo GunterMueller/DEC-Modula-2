@@ -1,0 +1,5 @@
+pat=$1
+shift
+ngrep "$pat" $@ [A-Z]*.def [A-Z]*.mod machinec.c
+echo
+

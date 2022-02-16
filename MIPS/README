@@ -1,0 +1,312 @@
+This directory should be copied to /usr/local/lib/mod and the mod binary 
+should be in your search path.
+
+Mod driver options 
+[FE = Mod2 front-end, MBE = Mips back-end]
+ -a    FE flag
+ -B    same as undocumented Vax feature. (modpassesdir)
+ -c    Don't invoke linker
+ -f    pass flags to various passes
+	-fc-Wl,-jumpopt would pass -Wl,-jumpopt to pmax cc
+	See cc(1) and ld(1) for Mips options.
+ -G    ignored
+ -g    FE & MBE flag
+ -I    adds to MODPATH
+ -i    FE flag
+ -l    link libraries (passed straight to cc link).
+ -L    imc flag
+ -m    imc flag
+ -M    run imc only
+ -N    imc flag
+ -n    like make -n
+ -O    FE (like Vax), MBE -O2 or -O1 otherwise, Looks at MIPS_OPT_LEVEL [0,1,2]
+ -o    specify output file name
+ -P    stop after ucode creation
+ -p,-pg,-ps	(ignored) Use pixie.    
+ -R    linker flag for Mahler (ignored)
+ -r    retain all intermediate files [Also set by MODKEEP]
+	.B   = binary ucode
+	.U   = symbolic ucode
+	.T   = mips symbol table
+	.u   = mips ucode extended coff object file
+	.S   = binary ucode from usplit on .u file
+	.O   = optimized binary ucode
+	.G   = binary Mips assembly
+	.s   = symbolic Mips assembly
+	.o   = mips machine language extended coff object file
+	Use '/usr/lib/usplit1.31 -o file.B -t file.T file.u' to break up file.u
+	Use 'btou file.B file.U' to look at symbolic Ucode
+	Use 'ppu file.U file.O.U file.P' to compare unopt/optimized ucode
+	Use 'stdump file.T' for somewhat human-readable symbol table
+	Use 'dis file.o' to see machine language in symbolic form
+ -S    stop after file.s created
+ -sc,-sk,-ss   FE flag
+ -t    compile for Titan (ignored)
+ -u    FE flag
+ -v    verbose (also passed to Mips cc) [also set by MODKEEP]
+ -W    imc flag
+ -X    imc flag
+ -y    FE flag
+ All others passed to FE
+
+Envariable overrides:
+	MODKEEP		sets -r -v
+	MIPS_OLIMIT	numeric override for default Olimit
+				[Default(1.31) = 1500, (2.10) = 500]
+	MIPS_OPT_LEVEL	[012] used to skip mips optimizer
+	UMOD		For using different fe in modlib
+				[default: UMOD=umod]
+	TMPDIR		Controls where temporary files are created
+				[default: TMPDIR=/usr/tmp]
+===============================================================================
+Midnight Dec 7.
+	umod has the following advantages over the phase 1 compiler. 
+	Faster: (just one binary with no text files passed between phases +
+		plus a wee bit more information to the optimizer).
+	Debuggable binaries: (much richer symbol tables).
+	Partial unaligned support: (unaligned integral types are supported.
+		Unaligned record fields are being worked on)
+	And a disadvantage:
+		I have run into what I consider a uopt bug when optimizing one
+		of the compiler source files. To get this release out I've
+		modified the source file for now and will search for
+		workarounds later. Should you suspect optimization problems 
+		set envariable MIPS_OPT_LEVEL to 1 and recompile. Umod itself
+		is bootstrapped optimized.
+
+	Known bugs:
+		(1) Indirect procedure calls with return values will break
+		    umod
+Midnight Dec 8.
+	Fixes:
+		(1) from above and have support for bit aligned fields
+		    (at least lvalues)
+
+	Known bugs:
+		(1) Passing constants to procedure expecting array
+		    of word will choke umod
+		(2) Converting WORDSIZE records/arrays/sets to integers and 
+		    vice-versa will produce bad ucode
+		(3) Struct returns might produce bad offset.
+		(4) Undefined types a la
+			V = pointer to Vrec;
+		    with Vrec never defined will gag Symbol table dump
+		(5) @nocount Dynarray passing wrong
+		(6) rvalues that are bit aligned fields unsupported
+1 am Dec 12.
+	Fixes:
+		(1) (2) (3) (4) (5) (6) from above
+	Known bugs:
+		(1) Dynarrays with counts are improperly referenced
+3:30pm Dec 12.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Modula-2 optimization can create states that UCode is not 
+		    expecting (Store Array to temporary where the
+		    meaning is store array address)
+Midnight Dec 12.
+	Fixes:
+		(1) from above
+	Enhancements:
+		Struct return calling convention is now C compatible and
+		incompatible with previous M2 compilers.
+	Known bugs:
+		(1) Constant sets are incorrectly output for imc use.
+		(2) @size 24 fields generate umod errors.
+		(3) -C generates bad ucode in some cases
+3:30pm Dec 13.
+	Fixes:
+		(1) (2) (3) from above
+	Known bugs:
+		(1) Type casts a la PointerType(foo)^.field generate bad ucode
+		(2) Ucode emitting breaks mod2 optimization assumptions.
+7pm Dec 13.
+	Fixes:
+		(1) (2) from above
+	Known bugs:
+		(1) BitExtract broken
+		(2) Type transfers broken (both integral and record)
+		(3) Structure returns break Uopt.
+1:30am Dec 15.
+	Fixes:
+		(1) (2) (3) from above
+	Known bugs:
+		(1) Type transfer to Proc type breaks uopt
+12:30pm Dec 15.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Val() is broken
+		(2) integers non byte/half/word size don't sign extend
+		(3) Bit fields support not complete after M2 optimization
+		(4) Singleton sets > WORDSIZE not completely protected
+		    from mips optimizer
+		(5) Record default alignment is byte [should be Word]
+		(6) symbol tables incomplete
+6:15pm Dec 18.
+	Fixes:
+		(1) (2) (3) (4) (5) (6) from above
+	Known bugs:
+		(1) Wordsize record parameters mishandled
+		(2) mod uses /tmp as default directory
+5pm Dec 19.
+	Fixes:
+		(1) from above
+(6pm)		(2) Now uses /usr/tmp or $TMPDIR
+	Known bugs:
+		(1) Wordsize structure returns used as parameters to another
+		    procedure handled incorrectly
+10am Dec 20.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Doing type transfers on VAR parameters broken
+11:45am Dec 20.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Type transfers from integrals to records broken
+11pm Dec 20.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Multiple type transfers broken
+		(2) float()/longfloat()/abs() of constants will break compiler
+		(3) Default -Olimit is 1000 (whereas uopt1.31 default is 1500)
+6pm Jan 2.
+	Fixes
+		(1) (2) (3) from above
+	Known bugs
+		(1) Unused external globals are always linked in
+		(2) Some unsupported opaque types are compiled without 
+			complaint
+		(3) Ucode list management error can cause illegal ucode
+7pm Jan 3.
+	Fixes
+		(1) (2) (3) from above
+	Enhancement
+		Compiler/Imc compiled without Checking
+3pm Jan 9.
+	Enhancement
+		Case statements slightly optimized
+	Known bugs:
+		(1) Optimized for loops where iteration variable is used
+		    as array subscript and either bound may be negative
+		    may generate wrong type of compare.
+6pm Jan 9.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) -O -C can produce code that references uninitialized
+		    temporaries [usually when open or sub array subscripts
+		    are being checked and could be moved out of a loop]
+2pm Jan 12.
+	Traps:
+		(1) With regard to bug (1) from above, this compiler insures 
+		    that the first access to any compiler temporary is to
+	            initialize it.
+	Known bugs:
+		(1) Case statements whose minimum switch is not = 0
+		    will use incorrect index into jump table.
+4pm Jan 15.
+	Fixes:
+		(1) from above
+	Known bugs:
+		(1) Case tables depending on unsigned data types of less than 
+		    32 bits may be converted into signed data types by the 
+		    mips optimizer. 
+		(2) Character constants were loaded onto ucode stack as
+		    8 byte quanities rather than 8 bits.
+7pm Jan 16.
+	Fixes:
+		(1) (2) from above
+	Enhancements
+		(1) Just another minor tweak to case statements
+
+Warning: dbx1.31 doesn't support variant records. dbx2.10 does.
+
+8:30pm Feb 21.
+	Bug fixes:
+		(1) Previous version would hang on recursive PROC declarations.
+		(2) Casting from unaligned critters to records now supported
+		    in pass-by-reference situations.
+	Enhancements
+		(1) trunc() had kludge code to support compiler but now
+		    the kludge is dead and the compiler is cleaner.
+
+6pm Feb 26.
+	Bug fixes:
+		(1) 3 byte objects in parameter lists tickle alignment
+		    assertions.
+	Known bugs:
+		(1) When min/max with real/longreal arguments is the second 
+		    argument to a procedure with an integer as first argument, 
+		    ugen will generate code that will break as1.31 [as2.1 is 
+		    less paranoid but still bad code is generated]
+		    [Culprit is ugen/eval.p/eval_fp_min_max]
+		(2) code a la
+			procedure top;
+			var x : ptr;
+			  procedure bottom;
+			  if x = nil then
+			    x := some_value;
+			  end;
+			  foo(x);
+			  x := nil;
+			  end bottom;
+			begin
+			  x := nil;
+			  bottom;
+			end top;
+		    gets mangled by uopt. 'x := some_value' is effectively
+		    ignored. Easiest workaround is to declare @inline bottom
+		(3) The compiler has code like that (2) in its
+		    open array parameter checking and consequently would
+		    generate bad expression trees and abort.
+		(4) unsigned mod unsigned generates garbage if the result 
+		    is > MAXINT
+7pm March 5.
+	Bug fixes:
+		(3) (4) from above.
+
+2pm March 9.
+	Bug fixes:
+		(1) Type transfers from objects of size less than WORDSIZE to
+		    object of size equal to WORDSIZE used uninitialized 
+		    WORDSIZE temporaries. Now temporaries are only used for
+		    float transfers and initialized for safety.
+
+Noon March 13.
+	Bug fixes:
+		(1) Word size records with bit fields can trigger code 
+		    generator errors on field references.
+
+1am March 28.
+	Bug fixes:
+		(1) Common Sub expressions with array[i] where i becomes 
+		    induction variable were mis-optimized.
+		(2) min/max/inc/dec were using datatype of first param [i.e.
+		    max(0,-1) was unsigned], now they use a compatible 
+		    datatype.
+		(3) inline params of size < 32 like chars would generate ugen
+		    errors.
+7pm March 28.
+	Bug fixes:
+		(1) Bug 1 from above had another place in FE to be fixed,
+		    Also addresses stored in temporaries for this optimization
+		    were broken.
+3pm May 7.
+	Bug fixes:
+		(1) Fix a problem with symbol table/line numbers and nested
+		    procedures.
+
+7pm May 17.
+	Bug fixes:
+		(1) Tone down bug fix of May 7 which produced bad symbol
+		    tables.
+		(2) Fix known bug #1 from Jan 9. Thanks Joel!
+
+1am May 23.
+	Bug fixes:
+		(1) Symbol table was wrong for fields of type : PROC(x);

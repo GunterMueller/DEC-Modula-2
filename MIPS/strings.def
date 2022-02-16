@@ -1,0 +1,31 @@
+(* $Header: strings.def,v 1.11 87/07/02 12:49:10 joel WSL/WRL/Release $ *)
+DEFINITION MODULE strings;
+
+(* string module:  make strings easier to deal with *)
+(* note: someday these operations will be builtin and inline *)
+
+(* this module generally expects to work with null-terminated strings *)
+(*  and ignores characters after the first null *)
+
+EXPORT QUALIFIED Compare, Assign, Append, Length;
+
+PROCEDURE Compare (CONST a, op, b : ARRAY OF CHAR) : BOOLEAN;
+	(* a and b are the null-terminated operands to compare *)
+	(* op is "=", "#", "<>", "<", ">", "<=", or ">=" *)
+	(* assertion fails if bad op *)
+
+PROCEDURE Assign (VAR toString : ARRAY OF CHAR; CONST fromString : ARRAY OF CHAR);
+	(* copies fromString to toString, stops at null or end of fromString *)
+	(* adds a null at the end of toString if there is room *)
+	(* gets a subscript error if toString cannot contain fromString value *)
+
+PROCEDURE Append (VAR toString : ARRAY OF CHAR; CONST fromString : ARRAY OF CHAR);
+	(* appends fromString to toString starting at first null in toString *)
+	(* stops at null or end of fromString *)
+	(* adds a null at the end of toString if there is room *)
+	(* gets a subscript error if toString cannot contain appended value *)
+
+PROCEDURE Length (CONST string : ARRAY OF CHAR) : CARDINAL;
+	(* returns the number of characters in string before the first null *)
+
+END strings.

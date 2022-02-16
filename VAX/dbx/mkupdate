@@ -1,0 +1,4964 @@
+#! /bin/csh -f
+#
+# csh file to update dbx source
+#
+# Assumes it is already in the appropriate dbx source directory.
+#
+# Changes are since 4.2 release corresponding to the following file versions:
+#
+#	source file	version	date		size
+#
+#	asm.c		1.2	12/15/82	1812
+#	c.c		1.7	8/16/83		14278
+#	cerror.s	1.3	9/2/82		554
+#	check.c		1.5	8/10/83		3566
+#	commands.y	1.9	8/17/83		10288
+#	coredump.c	1.4	1/25/83		3547
+#	debug.c		1.3	5/18/83		5534
+#	eval.c		1.10	8/17/83		23045
+#	events.c	1.3	4/8/83		16139
+#	fortran.c	1.4	8/16/83		13174
+#	keywords.c	1.3	5/18/83		3569
+#	languages.c	1.3	5/18/83		1778
+#	library.c	1.4	8/13/83		12800
+#	lists.c		1.2	12/15/82	4158
+#	machine.c	1.9	8/5/83		18051
+#	main.c		1.6	8/16/83		7505
+#	makedefs.c	1.2	12/15/82	3379
+#	mappings.c	1.4	8/10/83		5604
+#	mkdate.c	1.2	7/3/83		518
+#	names.c		1.3	2/16/83		3374
+#	object.c	1.14	10/22/83	23160
+#	operators.c	1.4	5/18/83		6704
+#	ops.c		1.3	12/18/82	30971
+#	pascal.c	1.2	12/15/82	8208
+#	printsym.c	1.12	8/10/83		10518
+#	process.c	1.12	8/19/83		21467
+#	runtime.c	1.9	8/14/83		12706
+#	scanner.c	1.8	8/5/83		10559
+#	source.c	1.9	8/5/83		6247
+#	symbols.c	1.11	8/16/83		26048
+#	tree.c		1.5	8/10/83		11800
+
+chmod 664 Makefile [a-x]*.{c,y} cerror.s defs.h
+
+echo Makefile
+ex - Makefile <<'endex'
+168c
+	tar cfv ${TAPE} \
+	    Makefile ${SRC} makedefs.c mkdate.c tests/ pchanges ptests
+.
+166a
+TAPE = tape
+
+.
+160c
+testinstall: ${AOUT} test install
+
+test:
+	@chdir tests; make
+
+install: ${AOUT}
+.
+157,158c
+	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} \
+	    mkdate mkdate.o makedefs makedefs.o date.c core mon.out prof.out
+.
+146c
+	${CC} -g mkdate.c -o mkdate
+.
+143c
+	${CC} -g makedefs.c library.o cerror.o -o makedefs
+.
+139a
+	@echo "expect 2 shift/reduce conflicts"
+.
+102a
+    modula-2.c \
+.
+79a
+    source.h \
+    stabstring.h \
+.
+78d
+70a
+    modula-2.h \
+.
+52a
+    stabstring.o \
+.
+43a
+    modula-2.o \
+.
+23c
+CFLAGS	= -g
+.
+17,18c
+DEST	= /usr/local/bin/dbx
+.
+7,11d
+1d
+wq
+'endex'
+
+echo asm.c
+ex - asm.c <<'endex'
+98a
+}
+
+public boolean asm_hasmodules ()
+{
+    return false;
+}
+
+public boolean asm_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
+.
+36a
+    language_setop(lang, L_HASMODULES, asm_hasmodules);
+    language_setop(lang, L_PASSADDR, asm_passaddr);
+.
+4a
+static char rcsid[] = "$Header: asm.c,v 1.3 84/03/27 10:19:36 linton Exp $";
+
+.
+wq
+'endex'
+
+echo c.c
+ex - c.c <<'endex'
+748a
+}
+
+/*
+ * Initialize typetable information.
+ */
+
+public c_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing right now */
+}
+
+public boolean c_hasmodules ()
+{
+    return false;
+}
+
+public boolean c_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    boolean b;
+    Symbol t;
+
+    t = rtype(exprtype);
+    b = (boolean) (t->class == ARRAY);
+    return b;
+.
+557c
+	n = (off + len + BITSPERBYTE - 1) div BITSPERBYTE;
+.
+534c
+	    printf("[%s]", c_classname(s));
+.
+475c
+	    if ((t->class == RANGE and istypename(t->type, "char")) or
+		t == t_char->type
+	    ) {
+.
+461c
+		i &= ((1 << s->symvalue.field.length) - 1);
+.
+452,459c
+		i = 0;
+		popn(size(s), &i);
+.
+438c
+    integer i, len;
+.
+354c
+		printname(stdout, t);
+.
+347a
+	case FFUNC:
+.
+155c
+		if (s->level == 1 and s->block != program) {
+.
+84a
+	    ) or (
+		t1->class == PTR and c_typematch(t1->type, t_char) and
+		t2->class == ARRAY and c_typematch(t2->type, t_char) and
+		t2->language == primlang
+.
+78c
+		t1->class == RANGE and isdouble(t1) and t2 == t_real->type
+.
+76c
+		(t2 == t_char->type or t2 == t_int->type)
+.
+73c
+		(t2 == t_int->type or t2 == t_char->type)
+.
+65c
+	if (t1 == t_char->type or t1 == t_int->type or t1 == t_real->type) {
+.
+38,45c
+    langC = language_define("c", ".c");
+    language_setop(langC, L_PRINTDECL, c_printdecl);
+    language_setop(langC, L_PRINTVAL, c_printval);
+    language_setop(langC, L_TYPEMATCH, c_typematch);
+    language_setop(langC, L_BUILDAREF, c_buildaref);
+    language_setop(langC, L_EVALAREF, c_evalaref);
+    language_setop(langC, L_MODINIT, c_modinit);
+    language_setop(langC, L_HASMODULES, c_hasmodules);
+    language_setop(langC, L_PASSADDR, c_passaddr);
+.
+31a
+private Language langC;
+
+.
+4a
+static char rcsid[] = "$Header: c.c,v 1.3 84/03/27 10:19:40 linton Exp $";
+
+.
+3c
+static char sccsid[] = "@(#)c.c 1.6 8/5/83";
+.
+wq
+'endex'
+
+echo check.c
+ex - check.c <<'endex'
+148c
+	} else if (ismodule(b->value.sym)) {
+	    outer = b->value.sym;
+	    while (outer != nil) {
+		find(p, outer->name) where p->block == outer endfind(p);
+		if (p == nil) {
+		    outer = nil;
+		    error("\"%s\" is not a subprogram", symname(b->value.sym));
+		} else if (ismodule(p)) {
+		    outer = p;
+		} else {
+		    outer = nil;
+		    b->value.sym = p;
+		}
+	    }
+	} else if (not isblock(b->value.sym)) {
+.
+141a
+    Symbol p, outer;
+
+.
+129c
+	    if (p->op == O_STOP) {
+		chkline(place);
+	    } else {
+		chkaddr(place);
+	    }
+.
+123,127c
+    } else if (place != nil) {
+	if (place->op == O_SYM) {
+	    chkblock(place);
+.
+60a
+	case O_CALL:
+	    if (not isroutine(p->value.arg[0]->nodetype)) {
+		beginerrmsg();
+		fprintf(stderr, "\"");
+		prtree(stderr, p->value.arg[0]);
+		fprintf(stderr, "\" not call-able");
+		enderrmsg();
+	    }
+	    break;
+
+.
+4a
+static char rcsid[] = "$Header: check.c,v 1.3 84/03/27 10:19:54 linton Exp $";
+
+.
+wq
+'endex'
+
+echo coredump.c
+ex - coredump.c <<'endex'
+141c
+	if (hdr.a_magic == OMAGIC) {
+	    error("data address 0x%x too low (lb = 0x%x)", addr, datamap.begin);
+	} else {
+	    coredump_readtext(buff, addr, nbytes);
+	}
+.
+7,8d
+4a
+static char rcsid[] = "$Header: coredump.c,v 1.3 84/03/27 10:20:10 linton Exp $";
+
+.
+wq
+'endex'
+
+echo debug.c
+ex - debug.c <<'endex'
+5a
+static char rcsid[] = "$Header: debug.c,v 1.3 84/03/27 10:20:14 linton Exp $";
+
+.
+wq
+'endex'
+
+echo eval.c
+ex - eval.c <<'endex'
+1124d
+1119,1121c
+    puts("call <proc>            - call a procedure in program");
+.
+1115,1116d
+1107a
+    puts("print <exp>            - print the value of the expression");
+    puts("where                  - print currently active procedures");
+    puts("stop at <line>         - suspend execution at the line");
+    puts("stop in <proc>         - suspend execution when <proc> is called");
+.
+1090c
+    sprintf(subject, "dbx (version %d) gripe", versionNumber);
+    pid = back("Mail", stdin, stdout, "-s", subject, maintainer, nil);
+.
+1083c
+    extern int versionNumber;
+    char subject[100];
+.
+1068,1070d
+1065,1066c
+		default:
+		    panic("bad size %d", varsize);
+	    }
+	} else {
+	    if (expsize <= varsize) {
+		sp -= expsize;
+		dwrite(sp, addr, expsize);
+	    } else {
+		sp -= expsize;
+		dwrite(sp, addr, varsize);
+	    }
+.
+1060,1063c
+		case sizeof(short):
+		    svalue = lvalue;
+		    dwrite(&svalue, addr, sizeof(svalue));
+		    break;
+.
+1052,1058c
+    expsize = size(exp->nodetype);
+    eval(exp);
+    if (varsize == sizeof(float) and expsize == sizeof(double)) {
+	fvalue = (float) pop(double);
+	dwrite(&fvalue, addr, sizeof(fvalue));
+    } else {
+	if (varsize < sizeof(long)) {
+	    lvalue = 0;
+	    popn(expsize, &lvalue);
+	    switch (varsize) {
+		case sizeof(char):
+		    cvalue = lvalue;
+		    dwrite(&cvalue, addr, sizeof(cvalue));
+		    break;
+.
+1050d
+1044a
+    float fvalue;
+.
+1041c
+    integer varsize, expsize;
+.
+953,954c
+	if (place == nil or place->op == O_SYM) {
+	    if (place == nil) {
+		s = program;
+	    } else {
+		s = place->value.sym;
+	    }
+.
+513c
+	    n1 = p->value.arg[0];
+	    while (n1->op == O_COMMA) {
+		n2 = n1->value.arg[0];
+		assert(n2->op == O_LCON);
+		if (not delevent((unsigned int) n2->value.lcon)) {
+		    error("unknown event %ld", n2->value.lcon);
+		}
+		n1 = n1->value.arg[1];
+	    }
+	    assert(n1->op == O_LCON);
+	    if (not delevent((unsigned int) n1->value.lcon)) {
+		error("unknown event %ld", n1->value.lcon);
+	    }
+.
+507a
+	case O_UP:
+	    checkref(p->value.arg[0]);
+	    assert(p->value.arg[0]->op == O_LCON);
+	    up(p->value.arg[0]->value.lcon);
+	    break;
+
+.
+485a
+	case O_RETURN:
+	    if (p->value.arg[0] == nil) {
+		rtnfunc(nil);
+	    } else {
+		assert(p->value.arg[0]->op == O_SYM);
+		rtnfunc(p->value.arg[0]->value.sym);
+	    }
+	    break;
+
+.
+469a
+	case O_DOWN:
+	    checkref(p->value.arg[0]);
+	    assert(p->value.arg[0]->op == O_LCON);
+	    down(p->value.arg[0]->value.lcon);
+	    break;
+
+.
+344d
+338,342c
+		if (isroutine(s)) {
+		    setcurfunc(s);
+		} else {
+		    find(f, s->name) where isroutine(f) endfind(f);
+		    if (f == nil) {
+			error("%s is not a procedure or function", symname(s));
+		    }
+		    setcurfunc(f);
+.
+165,166d
+59c
+	if (size(p->value.arg[n]->nodetype) == sizeof(float)) { \
+	    fr = pop(float); \
+	} else { \
+	    fr = pop(double); \
+	} \
+.
+38a
+#define popn(n, dest) { \
+    sp -= n; \
+    bcopy(sp, dest, n); \
+}
+
+.
+19a
+#include "runtime.h"
+.
+4a
+static char rcsid[] = "$Header: eval.c,v 1.3 84/03/27 10:20:23 linton Exp $";
+
+.
+wq
+'endex'
+
+echo events.c
+ex - events.c <<'endex'
+791c
+	    if (not delevent(e->id)) {
+		printf("!! dbx.fixbps: can't find event %d\n", e->id);
+	    }
+.
+753a
+	mov(buff, sp, n);
+	sp += n;
+	printf("after line %d:\t", prevline);
+	prtree(stdout, p);
+	printf(" = ");
+	printval(p->nodetype);
+	putchar('\n');
+.
+617c
+    setcurfunc(whatblock(pc));
+.
+514c
+	bp = bp_alloc(event, (Address) ret, 0, actions);
+.
+512d
+494d
+471a
+	if (found) {
+	    printeventid(eventId);
+	}
+.
+468a
+	    if (isstopped) {
+		eventId = p->event->id;
+	    }
+.
+466c
+		if (not delevent(p->event->id)) {
+		    printf("!! dbx.bpact: can't find event %d\n",
+			p->event->id);
+		}
+.
+462c
+		printf("breakpoint for event %d found at location 0x%x\n",
+		    p->event->id, pc);
+.
+456a
+    integer eventId;
+.
+443c
+	if (not delevent(e->id)) {
+	    printf("!! dbx.bpfree: can't delete event %d\n", e->id);
+	}
+.
+426c
+	if (e == nil) {
+	    printf("new bp at 0x%x for event ??\n", addr, e->id);
+	} else {
+	    printf("new bp at 0x%x for event %d\n", addr, e->id);
+	}
+.
+373a
+private printeventid (id)
+integer id;
+{
+    printf("[%d] ", id);
+}
+
+.
+350c
+	printeventid(e->id);
+.
+205c
+			if (not delevent(e->id)) {
+			    printf("!! dbx.translate: can't undo event %d?\n",
+				e->id);
+			}
+.
+197,198c
+			addr = objaddr(line, place->value.arg[0]->value.scon);
+.
+171a
+    return found;
+.
+161a
+	    found = true;
+.
+155a
+	    found = true;
+.
+150a
+	    list_delete(list_curitem(eventlist), eventlist);
+.
+147a
+		    if (tracebpts) {
+			printf("deleting breakpoint at 0x%x\n", bp->bpaddr);
+			fflush(stdout);
+		    }
+.
+145c
+	    found = true;
+.
+142a
+    found = false;
+.
+141a
+    boolean found;
+.
+136c
+public boolean delevent (id)
+.
+133a
+ * Returns whether it's successful or not.
+.
+16a
+#include "runtime.h"
+.
+4a
+static char rcsid[] = "$Header: events.c,v 1.3 84/03/27 10:20:41 linton Exp $";
+
+.
+wq
+'endex'
+
+echo fortran.c
+ex - fortran.c <<'endex'
+586a
+}
+
+/*
+ * Initialize typetable at beginning of a module.
+ */
+
+public fortran_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing for now */
+}
+
+public boolean fortran_hasmodules ()
+{
+    return false;
+}
+
+public boolean fortran_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
+.
+203c
+	    printf("source file \"%s.c\"", symname(s));
+.
+197a
+	    else printf(" subroutine");
+.
+195,196d
+186c
+		printf(" %s %s[%s] ",typename(s), symname(s), bounds);
+.
+183c
+                mksubs(p,s->type);
+.
+180a
+	case VAR:
+	    if (s->type->class == ARRAY &&
+		 (not istypename(s->type->type,"char")) ) {
+                char bounds[130], *p1, **p;
+.
+174,179d
+167a
+	    
+.
+166a
+
+.
+35,42c
+    fort = language_define("fortran", ".f");
+    language_setop(fort, L_PRINTDECL, fortran_printdecl);
+    language_setop(fort, L_PRINTVAL, fortran_printval);
+    language_setop(fort, L_TYPEMATCH, fortran_typematch);
+    language_setop(fort, L_BUILDAREF, fortran_buildaref);
+    language_setop(fort, L_EVALAREF, fortran_evalaref);
+    language_setop(fort, L_MODINIT, fortran_modinit);
+    language_setop(fort, L_HASMODULES, fortran_hasmodules);
+    language_setop(fort, L_PASSADDR, fortran_passaddr);
+.
+28a
+
+private Language fort;
+
+.
+4a
+static char rcsid[] = "$Header: fortran.c,v 1.3 84/03/27 10:20:53 linton Exp $";
+
+.
+3c
+static char sccsid[] = "@(#)fortran.c	1.3	5/20/83";
+.
+wq
+'endex'
+
+echo keywords.c
+ex - keywords.c <<'endex'
+161c
+	k = kwlookup(newcmd);
+	if (k == nil) {
+	    keyword(ident(newcmd), t, true);
+	} else {
+	    k->toknum = t;
+	}
+.
+155a
+    Keyword k;
+.
+138a
+    return k;
+}
+
+/*
+ * Return the token associated with a given keyword string.
+ * We assume that tokens cannot legitimately be nil (0).
+ */
+
+public Token findkeyword(n)
+Name n;
+{
+    Keyword k;
+    Token t;
+
+    k = kwlookup(n);
+.
+132d
+130c
+    Hashvalue h;
+.
+127c
+private Keyword kwlookup (n)
+.
+123,124c
+ * Find the keyword associated with the given string.
+.
+65a
+    keyword("c", CONT, true);
+    keyword("d", DELETE, true);
+    keyword("h", HELP, true);
+    keyword("e", EDIT, true);
+    keyword("l", LIST, true);
+    keyword("n", NEXT, true);
+    keyword("p", PRINT, true);
+    keyword("q", QUIT, true);
+    keyword("r", RUN, true);
+    keyword("s", STEP, true);
+    keyword("st", STOP, true);
+    keyword("j", STATUS, true);
+    keyword("t", WHERE, true);
+.
+28c
+    "stop", "stopi", "trace", "tracei", "up",
+.
+26c
+    "print", "psym", "quit", "rerun", "return", "run",
+.
+23c
+    "debug", "delete", "div", "down", "dump", "edit", "file", "func",
+.
+4a
+static char rcsid[] = "$Header: keywords.c,v 1.3 84/03/27 10:21:05 linton Exp $";
+
+.
+wq
+'endex'
+
+echo languages.c
+ex - languages.c <<'endex'
+92c
+    assert(ord(op) < ord(L_ENDOP));
+.
+45a
+    modula2_init();
+.
+42a
+    primlang = language_define("$builtin symbols", ".?");
+.
+28c
+    LanguageOperation *op[20];
+.
+22a
+
+Language primlang;
+
+.
+19c
+    L_PRINTDECL, L_PRINTVAL, L_TYPEMATCH, L_BUILDAREF, L_EVALAREF,
+    L_MODINIT, L_HASMODULES, L_PASSADDR,
+    L_ENDOP
+.
+15a
+
+.
+12a
+#include "modula-2.h"
+.
+4a
+static char rcsid[] = "$Header: languages.c,v 1.3 84/03/27 10:21:09 linton Exp $";
+
+.
+wq
+'endex'
+
+echo library.c
+ex - library.c <<'endex'
+502c
+boolean shouldquit;
+.
+484c
+    write(2, msg, strlen(msg));
+.
+479,481c
+    len = strlen(s);
+    if (len > 0) {
+	write(2, s, len);
+.
+475,477c
+    if (n >= 0 and n < sys_nsig) {
+	msg = sys_siglist[n];
+    } else {
+	msg = "Unknown signal";
+.
+472,473c
+    String msg;
+    integer len;
+.
+470a
+integer n;
+.
+469c
+public psignal(s, n)
+.
+429a
+    if (errinfo == nil(ERRINFO *)) {
+	initErrInfo();
+    }
+.
+419a
+    initErrInfo();
+.
+413,414c
+ * Catcherrs' purpose is to initialize the errinfo table, get this module
+ * loaded, and make sure my cerror is loaded (only applicable when this is
+ * in a library).
+.
+407,408d
+404,405c
+	} else if (e->func != ERR_IGNORE) {
+	    (*e->func)();
+.
+400,402c
+    if (errno < 0 or errno > sys_nerr) {
+	fatal("errno %d", errno);
+    } else {
+	if (errinfo == nil(ERRINFO *)) {
+	    initErrInfo();
+	}
+	e = &(errinfo[errno]);
+	if (e->func == ERR_CATCH) {
+.
+395a
+private initErrInfo ()
+{
+    integer i;
+
+    errinfo = alloc(sys_nerr, ERRINFO);
+    for (i = 0; i < sys_nerr; i++) {
+	errinfo[i].func = ERR_CATCH;
+    }
+    errinfo[0].func = ERR_IGNORE;
+    errinfo[EPERM].func = ERR_IGNORE;
+    errinfo[ENOENT].func = ERR_IGNORE;
+    errinfo[ESRCH].func = ERR_IGNORE;
+    errinfo[EBADF].func = ERR_IGNORE;
+    errinfo[ENOTTY].func = ERR_IGNORE;
+    errinfo[EOPNOTSUPP].func = ERR_IGNORE;
+}
+
+.
+357,394c
+private ERRINFO *errinfo;
+.
+354c
+ * Initialize error information, setting defaults for handling errors.
+.
+266c
+    return (boolean) (p != nil(Pidlist *));
+.
+257c
+private boolean isptraced(pid)
+.
+90c
+#define MAXNARGS 1000    /* unchecked upper limit on max num of arguments */
+.
+30,38d
+23c
+typedef int integer;
+typedef enum { FALSE, TRUE } boolean;
+.
+6a
+static char sccsid[] = "@(#)library.c 1.3 8/7/83";
+
+static char rcsid[] = "$Header: library.c,v 1.3 84/03/27 10:21:12 linton Exp $";
+
+.
+1,4d
+wq
+'endex'
+
+echo lists.c
+ex - lists.c <<'endex'
+4a
+static char rcsid[] = "$Header: lists.c,v 1.3 84/03/27 10:21:21 linton Exp $";
+
+.
+wq
+'endex'
+
+echo machine.c
+ex - machine.c <<'endex'
+914c
+    pstep(process, DEFSIG);
+.
+646c
+	    pstep(process, DEFSIG);
+.
+633a
+	case O_JMP: /* because it may be jmp (r1) */
+.
+630c
+	    if (addr == pc) {	/* recursive ret to self */
+		pstep(process, DEFSIG);
+	    } else {
+		stepto(addr);
+	    }
+.
+607c
+		setcurfunc(whatblock(pc));
+.
+604c
+		pstep(process, DEFSIG);
+.
+590d
+571a
+boolean isnext;
+{
+    Address addr;
+
+    addr = usignal(process);
+    if (addr == 0 or addr == 1) {
+	addr = findnextaddr(startaddr, isnext);
+    }
+    return addr;
+}
+
+private Address findnextaddr(startaddr, isnext)
+Address startaddr;
+.
+569a
+private Address findnextaddr();
+
+.
+552a
+    if (addr == startaddr) {
+	stepto(prevaddr);
+    }
+.
+545a
+	    prevaddr = addr;
+.
+541a
+    startaddr = pc;
+    prevaddr = startaddr;
+.
+540a
+    Address startaddr, prevaddr;
+.
+11a
+#include "runtime.h"
+.
+4a
+static char rcsid[] = "$Header: machine.c,v 1.3 84/03/27 10:21:26 linton Exp $";
+
+.
+wq
+'endex'
+
+echo main.c
+ex - main.c <<'endex'
+372a
+    pterm(process);
+.
+334a
+	case 'n':
+	    traceblocks = true;
+	    break;
+
+.
+251c
+    while (i < argc and (not foundfile or corefile == nil)) {
+.
+244a
+    traceblocks = false;
+.
+122c
+	setcurfunc(program);
+.
+120c
+	setcurfunc(whatblock(pc));
+.
+88,89c
+    if (setjmp(env) != FIRST_TIME) {
+	restoretty(stdout, &ttyinfo);
+    }
+.
+72d
+68c
+    printf("dbx version %d of %s.\nType 'help' for help.\n",
+	versionNumber, date);
+.
+62a
+    extern integer versionNumber;
+.
+61c
+    register integer i;
+.
+37a
+public Boolean traceblocks;		/* trace blocks while reading symbols */
+.
+16a
+#include "runtime.h"
+.
+4a
+static char rcsid[] = "$Header: main.c,v 1.3 84/03/27 10:21:40 linton Exp $";
+
+.
+3c
+static char sccsid[] = "@(#)main.c 1.5 5/17/83";
+.
+wq
+'endex'
+
+echo makedefs.c
+ex - makedefs.c <<'endex'
+4a
+static char rcsid[] = "$Header: makedefs.c,v 1.3 84/03/27 10:21:50 linton Exp $";
+
+.
+wq
+'endex'
+
+echo mappings.c
+ex - mappings.c <<'endex'
+4a
+static char rcsid[] = "$Header: mappings.c,v 1.3 84/03/27 10:21:54 linton Exp $";
+
+.
+wq
+'endex'
+
+echo mkdate.c
+ex - mkdate.c <<'endex'
+22a
+    DoVersionNumber();
+}
+
+DoVersionNumber()
+{
+    FILE *f;
+    int n;
+
+    f = fopen("version", "r");
+    if (f == NULL) {
+	n = 1;
+    } else {
+	fscanf(f, "%d", &n);
+	n = n + 1;
+	fclose(f);
+    }
+    f = fopen("version", "w");
+    if (f != NULL) {
+	fprintf(f, "%d\n", n);
+	fclose(f);
+    }
+    printf("int versionNumber = %d;\n", n);
+.
+3c
+static char rcsid[] = "$Header: mkdate.c,v 1.3 84/03/27 10:21:59 linton Exp $";
+.
+wq
+'endex'
+
+echo modula-2.c
+ex - modula-2.c <<'endex'
+0a
+/*
+ * Modula-2 specific symbol routines.
+ */
+
+static char rcsid[] = "$Header: modula-2.c,v 1.4 84/03/27 10:22:04 linton Exp $";
+
+#include "defs.h"
+#include "symbols.h"
+#include "modula-2.h"
+#include "languages.h"
+#include "tree.h"
+#include "eval.h"
+#include "mappings.h"
+#include "process.h"
+#include "runtime.h"
+#include "machine.h"
+
+#ifndef public
+#endif
+
+private Language mod2;
+private boolean initialized;
+
+/*
+ * Initialize Modula-2 information.
+ */
+
+public modula2_init ()
+{
+    mod2 = language_define("modula-2", ".mod");
+    language_setop(mod2, L_PRINTDECL, modula2_printdecl);
+    language_setop(mod2, L_PRINTVAL, modula2_printval);
+    language_setop(mod2, L_TYPEMATCH, modula2_typematch);
+    language_setop(mod2, L_BUILDAREF, modula2_buildaref);
+    language_setop(mod2, L_EVALAREF, modula2_evalaref);
+    language_setop(mod2, L_MODINIT, modula2_modinit);
+    language_setop(mod2, L_HASMODULES, modula2_hasmodules);
+    language_setop(mod2, L_PASSADDR, modula2_passaddr);
+    initialized = false;
+}
+
+/*
+ * Typematch tests if two types are compatible.  The issue
+ * is a bit complicated, so several subfunctions are used for
+ * various kinds of compatibility.
+ */
+
+private boolean nilMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(t1 == t_nil and t2->class == PTR) or
+	(t1->class == PTR and t2 == t_nil)
+    );
+    return b;
+}
+
+private boolean enumMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	t1->type == t2->type and (
+	    (t1->class == t2->class) or
+	    (t1->class == SCAL and t2->class == CONST) or
+	    (t1->class == CONST and t2->class == SCAL)
+	)
+    );
+    return b;
+}
+
+private boolean openArrayMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(
+	    t1->class == ARRAY and t1->chain == t_open and
+	    t2->class == ARRAY and
+	    compatible(rtype(t2->chain)->type, t_int) and
+	    compatible(t1->type, t2->type)
+	) or (
+	    t2->class == ARRAY and t2->chain == t_open and
+	    t1->class == ARRAY and
+	    compatible(rtype(t1->chain)->type, t_int) and
+	    compatible(t1->type, t2->type)
+	)
+    );
+    return b;
+}
+
+private boolean isConstString (t)
+register Symbol t;
+{
+    boolean b;
+
+    b = (boolean) (
+	t->language == primlang and t->class == ARRAY and t->type == t_char
+    );
+    return b;
+}
+
+private boolean stringArrayMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(
+	    isConstString(t1) and
+	    t2->class == ARRAY and compatible(t2->type, t_char->type)
+	) or (
+	    isConstString(t2) and
+	    t1->class == ARRAY and compatible(t1->type, t_char->type)
+	)
+    );
+    return b;
+}
+
+public boolean modula2_typematch (type1, type2)
+Symbol type1, type2;
+{
+    Boolean b;
+    Symbol t1, t2, tmp;
+
+    t1 = rtype(type1);
+    t2 = rtype(type2);
+    if (t1 == t2) {
+	b = true;
+    } else {
+	if (t1 == t_char->type or t1 == t_int->type or t1 == t_real->type) {
+	    tmp = t1;
+	    t1 = t2;
+	    t2 = tmp;
+	}
+	b = (Boolean) (
+	    (
+		t2 == t_int->type and
+		t1->class == RANGE and (
+		    istypename(t1->type, "integer") or
+		    istypename(t1->type, "cardinal")
+		)
+	    ) or (
+		t2 == t_char->type and
+		t1->class == RANGE and istypename(t1->type, "char")
+	    ) or (
+		t2 == t_real->type and
+		t1->class == RANGE and (
+		    istypename(t1->type, "real") or
+		    istypename(t1->type, "longreal")
+		)
+	    ) or (
+		nilMatch(t1, t2)
+	    ) or (
+		enumMatch(t1, t2)
+	    ) or (
+		openArrayMatch(t1, t2)
+	    ) or (
+		stringArrayMatch(t1, t2)
+	    )
+	);
+    }
+    return b;
+}
+
+/*
+ * Indent n spaces.
+ */
+
+private indent (n)
+int n;
+{
+    if (n > 0) {
+	printf("%*c", n, ' ');
+    }
+}
+
+public modula2_printdecl (s)
+Symbol s;
+{
+    register Symbol t;
+    Boolean semicolon;
+
+    semicolon = true;
+    if (s->class == TYPEREF) {
+	resolveRef(t);
+    }
+    switch (s->class) {
+	case CONST:
+	    if (s->type->class == SCAL) {
+		printf("(enumeration constant, ord %ld)",
+		    s->symvalue.iconval);
+	    } else {
+		printf("const %s = ", symname(s));
+		modula2_printval(s);
+	    }
+	    break;
+
+	case TYPE:
+	    printf("type %s = ", symname(s));
+	    printtype(s, s->type, 0);
+	    break;
+
+	case TYPEREF:
+	    printf("type %s", symname(s));
+	    break;
+
+	case VAR:
+	    if (isparam(s)) {
+		printf("(parameter) %s : ", symname(s));
+	    } else {
+		printf("var %s : ", symname(s));
+	    }
+	    printtype(s, s->type, 0);
+	    break;
+
+	case REF:
+	    printf("(var parameter) %s : ", symname(s));
+	    printtype(s, s->type, 0);
+	    break;
+
+	case RANGE:
+	case ARRAY:
+	case RECORD:
+	case VARNT:
+	case PTR:
+	    printtype(s, s, 0);
+	    semicolon = false;
+	    break;
+
+	case FVAR:
+	    printf("(function variable) %s : ", symname(s));
+	    printtype(s, s->type, 0);
+	    break;
+
+	case FIELD:
+	    printf("(field) %s : ", symname(s));
+	    printtype(s, s->type, 0);
+	    break;
+
+	case PROC:
+	    printf("procedure %s", symname(s));
+	    listparams(s);
+	    break;
+
+	case PROG:
+	    printf("program %s", symname(s));
+	    listparams(s);
+	    break;
+
+	case FUNC:
+	    printf("function %s", symname(s));
+	    listparams(s);
+	    printf(" : ");
+	    printtype(s, s->type, 0);
+	    break;
+
+	case MODULE:
+	    printf("module %s", symname(s));
+	    break;
+
+	default:
+	    printf("%s : (class %s)", symname(s), classname(s));
+	    break;
+    }
+    if (semicolon) {
+	putchar(';');
+    }
+    putchar('\n');
+}
+
+/*
+ * Recursive whiz-bang procedure to print the type portion
+ * of a declaration.
+ *
+ * The symbol associated with the type is passed to allow
+ * searching for type names without getting "type blah = blah".
+ */
+
+private printtype (s, t, n)
+Symbol s;
+Symbol t;
+int n;
+{
+    register Symbol tmp;
+
+    if (t->class == TYPEREF) {
+	resolveRef(t);
+    }
+    switch (t->class) {
+	case VAR:
+	case CONST:
+	case FUNC:
+	case PROC:
+	    panic("printtype: class %s", classname(t));
+	    break;
+
+	case ARRAY:
+	    printf("array[");
+	    tmp = t->chain;
+	    if (tmp != nil) {
+		for (;;) {
+		    printtype(tmp, tmp, n);
+		    tmp = tmp->chain;
+		    if (tmp == nil) {
+			break;
+		    }
+		    printf(", ");
+		}
+	    }
+	    printf("] of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case RECORD:
+	    printRecordDecl(t, n);
+	    break;
+
+	case FIELD:
+	    if (t->chain != nil) {
+		printtype(t->chain, t->chain, n);
+	    }
+	    printf("\t%s : ", symname(t));
+	    printtype(t, t->type, n);
+	    printf(";\n");
+	    break;
+
+	case RANGE:
+	    printRangeDecl(t);
+	    break;
+
+	case PTR:
+	    printf("pointer to ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case TYPE:
+	    if (t->name != nil and ident(t->name)[0] != '\0') {
+		printname(stdout, t);
+	    } else {
+		printtype(t, t->type, n);
+	    }
+	    break;
+
+	case SCAL:
+	    printEnumDecl(t, n);
+	    break;
+
+	case SET:
+	    printf("set of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case TYPEREF:
+	    break;
+
+	default:
+	    printf("(class %d)", t->class);
+	    break;
+    }
+}
+
+/*
+ * Print out a record declaration.
+ */
+
+private printRecordDecl (t, n)
+Symbol t;
+int n;
+{
+    register Symbol f;
+
+    if (t->chain == nil) {
+	printf("record end");
+    } else {
+	printf("record\n");
+	for (f = t->chain; f != nil; f = f->chain) {
+	    indent(n+4);
+	    printf("%s : ", symname(f));
+	    printtype(f->type, f->type, n+4);
+	    printf(";\n");
+	}
+	indent(n);
+	printf("end");
+    }
+}
+
+/*
+ * Print out the declaration of a range type.
+ */
+
+private printRangeDecl (t)
+Symbol t;
+{
+    long r0, r1;
+
+    r0 = t->symvalue.rangev.lower;
+    r1 = t->symvalue.rangev.upper;
+    if (t == t_char or istypename(t, "char")) {
+	if (r0 < 0x20 or r0 > 0x7e) {
+	    printf("%ld..", r0);
+	} else {
+	    printf("'%c'..", (char) r0);
+	}
+	if (r1 < 0x20 or r1 > 0x7e) {
+	    printf("\\%lo", r1);
+	} else {
+	    printf("'%c'", (char) r1);
+	}
+    } else if (r0 > 0 and r1 == 0) {
+	printf("%ld byte real", r0);
+    } else if (r0 >= 0) {
+	printf("%lu..%lu", r0, r1);
+    } else {
+	printf("%ld..%ld", r0, r1);
+    }
+}
+
+/*
+ * Print out an enumeration declaration.
+ */
+
+private printEnumDecl (e, n)
+Symbol e;
+int n;
+{
+    Symbol t;
+
+    printf("(");
+    t = e->chain;
+    if (t != nil) {
+	printf("%s", symname(t));
+	t = t->chain;
+	while (t != nil) {
+	    printf(", %s", symname(t));
+	    t = t->chain;
+	}
+    }
+    printf(")");
+}
+
+/*
+ * List the parameters of a procedure or function.
+ * No attempt is made to combine like types.
+ */
+
+private listparams (s)
+Symbol s;
+{
+    Symbol t;
+
+    if (s->chain != nil) {
+	putchar('(');
+	for (t = s->chain; t != nil; t = t->chain) {
+	    switch (t->class) {
+		case REF:
+		    printf("var ");
+		    break;
+
+		case FPROC:
+		case FFUNC:
+		    printf("procedure ");
+		    break;
+
+		case VAR:
+		    break;
+
+		default:
+		    panic("unexpected class %d for parameter", t->class);
+	    }
+	    printf("%s", symname(t));
+	    if (s->class == PROG) {
+		printf(", ");
+	    } else {
+		printf(" : ");
+		printtype(t, t->type, 0);
+		if (t->chain != nil) {
+		    printf("; ");
+		}
+	    }
+	}
+	putchar(')');
+    }
+}
+
+/*
+ * Modula 2 interface to printval.
+ */
+
+public modula2_printval (s)
+Symbol s;
+{
+    prval(s, size(s));
+}
+
+/*
+ * Print out the value on the top of the expression stack
+ * in the format for the type of the given symbol, assuming
+ * the size of the object is n bytes.
+ */
+
+private prval (s, n)
+Symbol s;
+integer n;
+{
+    Symbol t;
+    Address a;
+    integer len;
+    double r;
+    integer scalar;
+    boolean found;
+
+    if (s->class == TYPEREF) {
+	resolveRef(s);
+    }
+    switch (s->class) {
+	case CONST:
+	case TYPE:
+	case VAR:
+	case REF:
+	case FVAR:
+	case TAG:
+	case FIELD:
+	    prval(s->type, n);
+	    break;
+
+	case ARRAY:
+	    t = rtype(s->type);
+	    if (t->class == RANGE and istypename(t->type, "char")) {
+		len = size(s);
+		sp -= len;
+		printf("'%.*s'", len, sp);
+		break;
+	    } else {
+		printarray(s);
+	    }
+	    break;
+
+	case RECORD:
+	    printrecord(s);
+	    break;
+
+	case VARNT:
+	    printf("can't print out variant records");
+	    break;
+
+	case RANGE:
+	    printrange(s, n);
+	    break;
+
+	case FILET:
+	case PTR:
+	    a = pop(Address);
+	    if (a == 0) {
+		printf("nil");
+	    } else {
+		printf("0x%x", a);
+	    }
+	    break;
+
+	case SCAL:
+	    popn(n, &scalar);
+	    found = false;
+	    for (t = s->chain; t != nil; t = t->chain) {
+		if (t->symvalue.iconval == scalar) {
+		    printf("%s", symname(t));
+		    found = true;
+		    break;
+		}
+	    }
+	    if (not found) {
+		printf("(scalar = %d)", scalar);
+	    }
+	    break;
+
+	case FPROC:
+	case FFUNC:
+	    a = pop(long);
+	    t = whatblock(a);
+	    if (t == nil) {
+		printf("(proc 0x%x)", a);
+	    } else {
+		printf("%s", symname(t));
+	    }
+	    break;
+
+	case SET:
+	    printSet(s);
+	    break;
+
+	default:
+	    if (ord(s->class) < ord(BADUSE) or ord(s->class) > ord(TYPEREF)) {
+		panic("printval: bad class %d", ord(s->class));
+	    }
+	    printf("[%s]", classname(s));
+	    break;
+    }
+}
+
+/*
+ * Print out the value of a scalar (non-enumeration) type.
+ */
+
+private printrange (s, n)
+Symbol s;
+integer n;
+{
+    double d;
+    float f;
+    integer i;
+
+    if (s->symvalue.rangev.upper == 0 and s->symvalue.rangev.lower > 0) {
+	if (n == sizeof(float)) {
+	    popn(n, &f);
+	    d = f;
+	} else {
+	    popn(n, &d);
+	}
+	prtreal(d);
+    } else {
+	i = 0;
+	popn(n, &i);
+	if (s == t_boolean) {
+	    printf(((Boolean) i) == true ? "true" : "false");
+	} else if (s == t_char or istypename(s->type, "char")) {
+	    printf("'%c'", i);
+	} else if (s->symvalue.rangev.lower >= 0) {
+	    printf("%lu", i);
+	} else {
+	    printf("%ld", i);
+	}
+    }
+}
+
+/*
+ * Print out a set.
+ */
+
+private printSet (s)
+Symbol s;
+{
+    Symbol t;
+    integer nbytes;
+
+    nbytes = size(s);
+    t = rtype(s->type);
+    printf("{");
+    sp -= nbytes;
+    if (t->class == SCAL) {
+	printSetOfEnum(t);
+    } else if (t->class == RANGE) {
+	printSetOfRange(t);
+    } else {
+	panic("expected range or enumerated base type for set");
+    }
+    printf("}");
+}
+
+/*
+ * Print out a set of an enumeration.
+ */
+
+private printSetOfEnum (t)
+Symbol t;
+{
+    register Symbol e;
+    register integer i, j, *p;
+    boolean first;
+
+    p = (int *) sp;
+    i = *p;
+    j = 0;
+    e = t->chain;
+    first = true;
+    while (e != nil) {
+	if ((i&1) == 1) {
+	    if (first) {
+		first = false;
+		printf("%s", symname(e));
+	    } else {
+		printf(", %s", symname(e));
+	    }
+	}
+	i >>= 1;
+	++j;
+	if (j >= sizeof(integer)*BITSPERBYTE) {
+	    j = 0;
+	    ++p;
+	    i = *p;
+	}
+	e = e->chain;
+    }
+}
+
+/*
+ * Print out a set of a subrange type.
+ */
+
+private printSetOfRange (t)
+Symbol t;
+{
+    register integer i, j, *p;
+    long v;
+    boolean first;
+
+    p = (int *) sp;
+    i = *p;
+    j = 0;
+    v = t->symvalue.rangev.lower;
+    first = true;
+    while (v <= t->symvalue.rangev.upper) {
+	if ((i&1) == 1) {
+	    if (first) {
+		first = false;
+		printf("%ld", v);
+	    } else {
+		printf(", %ld", v);
+	    }
+	}
+	i >>= 1;
+	++j;
+	if (j >= sizeof(integer)*BITSPERBYTE) {
+	    j = 0;
+	    ++p;
+	    i = *p;
+	}
+	++v;
+    }
+}
+
+/*
+ * Construct a node for subscripting.
+ */
+
+public Node modula2_buildaref (a, slist)
+Node a, slist;
+{
+    register Symbol t;
+    register Node p;
+    Symbol etype, atype, eltype;
+    Node esub, r;
+
+    r = a;
+    t = rtype(a->nodetype);
+    eltype = t->type;
+    if (t->class != ARRAY) {
+	beginerrmsg();
+	prtree(stderr, a);
+	fprintf(stderr, " is not an array");
+	enderrmsg();
+    } else {
+	p = slist;
+	t = t->chain;
+	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
+	    esub = p->value.arg[0];
+	    etype = rtype(esub->nodetype);
+	    atype = rtype(t);
+	    if (not compatible(atype, etype)) {
+		beginerrmsg();
+		fprintf(stderr, "subscript ");
+		prtree(stderr, esub);
+		fprintf(stderr, " is the wrong type");
+		enderrmsg();
+	    }
+	    r = build(O_INDEX, r, esub);
+	    r->nodetype = eltype;
+	}
+	if (p != nil or t != nil) {
+	    beginerrmsg();
+	    if (p != nil) {
+		fprintf(stderr, "too many subscripts for ");
+	    } else {
+		fprintf(stderr, "not enough subscripts for ");
+	    }
+	    prtree(stderr, a);
+	    enderrmsg();
+	}
+    }
+    return r;
+}
+
+/*
+ * Evaluate a subscript index.
+ */
+
+public int modula2_evalaref (s, i)
+Symbol s;
+long i;
+{
+    long lb, ub;
+
+    chkOpenArray(s);
+    s = rtype(rtype(s)->chain);
+    findbounds(s, &lb, &ub);
+    if (i < lb or i > ub) {
+	error("subscript %d out of range [%d..%d]", i, lb, ub);
+    }
+    return (i - lb);
+}
+
+/*
+ * Initial Modula-2 type information.
+ */
+
+#define NTYPES 12
+
+private Symbol inittype[NTYPES + 1];
+
+private addType (n, s, lower, upper)
+integer n;
+String s;
+long lower, upper;
+{
+    register Symbol t;
+
+    if (n > NTYPES) {
+	panic("initial Modula-2 type number too large for '%s'", s);
+    }
+    t = insert(identname(s, true));
+    t->language = mod2;
+    t->class = TYPE;
+    t->type = newSymbol(nil, 0, RANGE, t, nil);
+    t->type->symvalue.rangev.lower = lower;
+    t->type->symvalue.rangev.upper = upper;
+    t->type->language = mod2;
+    inittype[n] = t;
+}
+
+private initModTypes ()
+{
+    addType(1, "integer", 0x80000000L, 0x7fffffffL);
+    addType(2, "char", 0L, 255L);
+    addType(3, "boolean", 0L, 1L);
+    addType(4, "unsigned", 0L, 0xffffffffL);
+    addType(5, "real", 4L, 0L);
+    addType(6, "longreal", 8L, 0L);
+    addType(7, "word", 0L, 0xffffffffL);
+    addType(8, "byte", 0L, 255L);
+    addType(9, "address", 0L, 0xffffffffL);
+    addType(10, "file", 0L, 0xffffffffL);
+    addType(11, "process", 0L, 0xffffffffL);
+    addType(12, "cardinal", 0L, 0x7fffffffL);
+}
+
+/*
+ * Initialize typetable.
+ */
+
+public modula2_modinit (typetable)
+Symbol typetable[];
+{
+    register integer i;
+
+    if (not initialized) {
+	initModTypes();
+    }
+    for (i = 1; i <= NTYPES; i++) {
+	typetable[i] = inittype[i];
+    }
+}
+
+public boolean modula2_hasmodules ()
+{
+    return true;
+}
+
+public boolean modula2_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
+}
+.
+wq
+'endex'
+
+echo names.c
+ex - names.c <<'endex'
+4a
+static char rcsid[] = "$Header: names.c,v 1.3 84/03/27 10:22:19 linton Exp $";
+
+.
+wq
+'endex'
+
+echo object.c
+ex - object.c <<'endex'
+1098c
+private setnfiles ()
+.
+1089c
+private setnlines ()
+.
+1073c
+private enterfile (filename, addr)
+.
+1049,1050c
+private allocmaps (nf, nl)
+integer nf, nl;
+.
+615,1045d
+611c
+    initTypeTable();
+.
+594,605d
+592a
+	nn = identname(mname, true);
+	if (curmodule == nil or curmodule->name != nn) {
+	    s = insert(nn);
+	    s->class = MODULE;
+	    s->symvalue.funcv.beginaddr = 0;
+	    findbeginning(s);
+	} else {
+	    s = curmodule;
+	}
+	s->language = curlang;
+	enterblock(s);
+	curmodule = s;
+.
+591a
+	    if (curblock->class != PROG) {
+		exitblock();
+	    }
+.
+588,589c
+    if (not (*language_op(curlang, L_HASMODULES))()) {
+.
+568c
+private enterSourceModule (n, addr)
+.
+546,555c
+    if (nesting > 0 and addrstk[nesting] != NOADDR) {
+	startaddr = (linep - 1)->addr;
+	++bnum;
+	sprintf(buf, "$b%d", bnum);
+	s = insert(identname(buf, false));
+	s->language = curlang;
+	s->class = PROC;
+	s->symvalue.funcv.src = false;
+	s->symvalue.funcv.inline = true;
+	s->symvalue.funcv.beginaddr = startaddr;
+	enterblock(s);
+	newfunc(s, startaddr);
+	addrstk[nesting] = NOADDR;
+    }
+.
+544a
+    Address startaddr;
+.
+540c
+public chkUnnamedBlock ()
+.
+505c
+    register integer i;
+.
+501c
+private check_filename (name)
+.
+466c
+private check_local (name, np)
+.
+457d
+455a
+	t->block = curblock;
+.
+447,449c
+    t = findsym(n);
+.
+441c
+private check_var (np, n)
+.
+412,414c
+	    if (t->class == VAR) {
+		t->symvalue.offset = np->n_value;
+	    } else {
+		t->symvalue.funcv.beginaddr = np->n_value;
+		newfunc(t, codeloc(t));
+		findbeginning(t);
+	    }
+.
+398,401c
+	    t = findsym(n);
+.
+388c
+private check_global (name, np)
+.
+383a
+ * Try to find the symbol that is referred to by the given name.
+ * Since it's an external, we may want to follow a level of indirection.
+ */
+
+private Symbol findsym (n)
+Name n;
+{
+    register Symbol r, s;
+
+    find(s, n) where
+	s->level == program->level and
+	    (s->class == EXTREF or s->class == VAR or
+	     s->class == PROC or s->class == FUNC)
+    endfind(s);
+    if (s != nil and s->class == EXTREF) {
+	r = s->symvalue.extref;
+	delete(s);
+    } else {
+	r = s;
+    }
+    return r;
+}
+
+/*
+.
+369a
+	case N_MOD2:
+.
+335a
+	    n = identname(name, true);
+.
+325d
+323a
+		addrstk[nesting] = (linep - 1)->addr;
+.
+320a
+	    --nesting;
+.
+296a
+	    n = identname(name, true);
+.
+282,286d
+278,279c
+    register Name n;
+.
+273c
+private enter_nl (name, np)
+.
+260c
+public objfree ()
+.
+253a
+    t_boolean = maketype("$boolean", 0L, 1L);
+    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
+    t_char = maketype("$char", 0L, 255L);
+    t_real = maketype("$real", 8L, 0L);
+    t_nil = maketype("$nil", 0L, 0L);
+    t_open = maketype("integer", 0L, -1L);
+.
+237,246c
+    program = insert(identname("", true));
+.
+232c
+private initsyms ()
+.
+228a
+ * Get a continuation entry from the name list.
+ * Return the beginning of the name.
+ */
+
+public String getcont ()
+{
+    register integer index;
+    register String name;
+
+    ++curnp;
+    index = curnp->n_un.n_strx;
+    if (index == 0) {
+	panic("continuation followed by empty stab");
+    }
+    name = &stringtab[index - 4];
+    return name;
+}
+
+/*
+.
+220a
+	++curnp;
+	np = curnp;
+.
+193c
+	 * Assumptions:
+.
+191a
+
+.
+188d
+183,186d
+177,181c
+		lastchar = &name[strlen(name) - 1];
+		if (*lastchar == '_') {
+		    *lastchar = '\0';
+.
+171c
+             *  If the program contains any .f files a trailing _ is stripped
+.
+166c
+    curnp = &namelist[0];
+    np = curnp;
+    while (np < ub) {
+.
+159a
+    integer index;
+    char *lastchar;
+.
+157d
+152c
+private readsyms (f)
+.
+116c
+public readobj (file)
+.
+105,108d
+84c
+ * private enterline (linenumber, address)
+.
+79a
+public exitblock ()
+{
+    if (curblock->class == FUNC or curblock->class == PROC) {
+	if (prevlinep != linep) {
+	    curblock->symvalue.funcv.src = true;
+	}
+    }
+    if (curlevel <= 0) {
+	panic("nesting depth underflow (%d)", curlevel);
+    }
+    --curlevel;
+    if (traceblocks) {
+	printf("exiting block %s\n", symname(curblock));
+    }
+    curblock = blkstack[curlevel];
+}
+
+.
+70,77c
+public enterblock (b)
+Symbol b;
+{
+    if (curblock == nil) {
+	b->level = 1;
+    } else {
+	b->level = curblock->level + 1;
+    }
+    b->block = curblock;
+    pushBlock(b);
+.
+62,67c
+public pushBlock (b)
+Symbol b;
+{
+    if (curlevel >= MAXBLKDEPTH) {
+	fatal("nesting depth too large (%d)", curlevel);
+    }
+    blkstack[curlevel] = curblock;
+    ++curlevel;
+    curblock = b;
+    if (traceblocks) {
+	printf("entering block %s\n", symname(b));
+    }
+.
+58,59c
+private integer curlevel;
+private integer bnum, nesting;
+.
+56c
+public Symbol curblock;
+
+.
+48c
+public String curfilename ()
+{
+    return ((filep-1)->filename);
+}
+.
+41,42d
+36,39c
+public Language curlang;
+public Symbol curmodule;
+public Symbol curparam;
+public Symbol curcomm;
+public Symbol commchain;
+
+private char *stringtab;
+private struct nlist *curnp;
+.
+33,34c
+public integer objsize;
+.
+31a
+#ifndef N_MOD2
+#    define N_MOD2 0x50
+#endif
+
+.
+29a
+#include "languages.h"
+#include "symbols.h"
+
+.
+10a
+#include "stabstring.h"
+.
+4a
+static char rcsid[] = "$Header: object.c,v 1.4 84/03/27 10:22:25 linton Exp $";
+
+.
+wq
+'endex'
+
+echo operators.c
+ex - operators.c <<'endex'
+199a
+/* O_RERUN */		0,	null,		"rerun",
+/* O_RETURN */		1,	null,		"return",
+/* O_UP */		1,	UNARY,		"up",
+/* O_DOWN */		1,	UNARY,		"down",
+.
+160c
+/* O_DELETE */		1,	null,		"delete",
+.
+80a
+    O_RERUN,		/* re-run program with the same arguments as before */
+    O_RETURN,		/* continue execution until procedure returns */
+    O_UP,		/* move current function up the call stack */
+    O_DOWN,		/* move current function down the call stack */
+.
+4a
+static char rcsid[] = "$Header: operators.c,v 1.3 84/03/27 10:22:38 linton Exp $";
+
+.
+wq
+'endex'
+
+echo ops.c
+ex - ops.c <<'endex'
+4a
+static char rcsid[] = "$Header: ops.c,v 1.3 84/03/27 10:22:43 linton Exp $";
+
+.
+wq
+'endex'
+
+echo pascal.c
+ex - pascal.c <<'endex'
+439a
+}
+
+/*
+ * Construct a node for subscripting.
+ */
+
+public Node pascal_buildaref (a, slist)
+Node a, slist;
+{
+    register Symbol t;
+    register Node p;
+    Symbol etype, atype, eltype;
+    Node esub, r;
+
+    r = a;
+    t = rtype(a->nodetype);
+    eltype = t->type;
+    if (t->class != ARRAY) {
+	beginerrmsg();
+	prtree(stderr, a);
+	fprintf(stderr, " is not an array");
+	enderrmsg();
+    } else {
+	p = slist;
+	t = t->chain;
+	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
+	    esub = p->value.arg[0];
+	    etype = rtype(esub->nodetype);
+	    atype = rtype(t);
+	    if (not compatible(atype, etype)) {
+		beginerrmsg();
+		fprintf(stderr, "subscript ");
+		prtree(stderr, esub);
+		fprintf(stderr, " is the wrong type");
+		enderrmsg();
+	    }
+	    r = build(O_INDEX, r, esub);
+	    r->nodetype = eltype;
+	}
+	if (p != nil or t != nil) {
+	    beginerrmsg();
+	    if (p != nil) {
+		fprintf(stderr, "too many subscripts for ");
+	    } else {
+		fprintf(stderr, "not enough subscripts for ");
+	    }
+	    prtree(stderr, a);
+	    enderrmsg();
+	}
+    }
+    return r;
+}
+
+/*
+ * Evaluate a subscript index.
+ */
+
+public int pascal_evalaref (s, i)
+Symbol s;
+long i;
+{
+    long lb, ub;
+
+    s = rtype(rtype(s)->chain);
+    lb = s->symvalue.rangev.lower;
+    ub = s->symvalue.rangev.upper;
+    if (i < lb or i > ub) {
+	error("subscript %d out of range [%d..%d]", i, lb, ub);
+    }
+    return (i - lb);
+}
+
+/*
+ * Initial Pascal type information.
+ */
+
+#define NTYPES 4
+
+private Symbol inittype[NTYPES];
+private integer count;
+
+private addType (s, lower, upper)
+String s;
+long lower, upper;
+{
+    register Symbol t;
+
+    if (count > NTYPES) {
+	panic("too many initial types");
+    }
+    t = maketype(s, lower, upper);
+    t->language = pasc;
+    inittype[count] = t;
+    ++count;
+}
+
+private initTypes ()
+{
+    count = 1;
+    addType("integer", 0x80000000L, 0x7fffffffL);
+    addType("char", 0L, 255L);
+    addType("boolean", 0L, 1L);
+    addType("real", 4L, 0L);
+}
+
+/*
+ * Initialize typetable.
+ */
+
+public pascal_modinit (typetable)
+Symbol typetable[];
+{
+    register integer i;
+
+    for (i = 1; i < NTYPES; i++) {
+	typetable[i] = inittype[i];
+    }
+}
+
+public boolean pascal_hasmodules ()
+{
+    return false;
+}
+
+public boolean pascal_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
+.
+395,397d
+358c
+	    } else if (s == t_char or istypename(s,"char")) {
+.
+336c
+	    if (t->class==RANGE and istypename(t->type,"char")) {
+.
+330a
+	case VAR:
+	case REF:
+	case FVAR:
+	case TAG:
+	case FIELD:
+.
+329a
+	case CONST:
+.
+326,328d
+251c
+	    t = t->chain;
+.
+215c
+	    if (t == t_char or istypename(t,"char")) {
+.
+29,34c
+    pasc = language_define("pascal", ".p");
+    language_setop(pasc, L_PRINTDECL, pascal_printdecl);
+    language_setop(pasc, L_PRINTVAL, pascal_printval);
+    language_setop(pasc, L_TYPEMATCH, pascal_typematch);
+    language_setop(pasc, L_BUILDAREF, pascal_buildaref);
+    language_setop(pasc, L_EVALAREF, pascal_evalaref);
+    language_setop(pasc, L_MODINIT, pascal_modinit);
+    language_setop(pasc, L_HASMODULES, pascal_hasmodules);
+    language_setop(pasc, L_PASSADDR, pascal_passaddr);
+    initTypes();
+.
+22a
+private Language pasc;
+
+.
+4a
+static char rcsid[] = "$Header: pascal.c,v 1.3 84/03/27 10:23:04 linton Exp $";
+
+.
+wq
+'endex'
+
+echo printsym.c
+ex - printsym.c <<'endex'
+571a
+    } else {
+	printf("\\0%o",c);
+.
+570c
+    } else if (c >= ' ' && c <= '~') {
+.
+481,482c
+    off = f->symvalue.field.offset;
+    len = f->symvalue.field.length;
+    sp += ((off + len + BITSPERBYTE - 1) div BITSPERBYTE);
+    printval(f);
+.
+475,479c
+    printf("%s = ", symname(f));
+.
+473a
+    register int off, len;
+.
+470,471c
+private printfield(f)
+Symbol f;
+.
+466,467c
+ * Print out a field.
+.
+461c
+    f = s->chain;
+    if (f != nil) {
+	for (;;) {
+	    printfield(f);
+	    f = f->chain;
+	if (f == nil) break;
+	    printf(", ");
+	}
+    }
+.
+455a
+    Symbol f;
+
+.
+441a
+	    } else if (t->language == primlang) {
+		(*language_op(findlanguage(".c"), L_PRINTVAL))(t);
+.
+431a
+    if (t->class == TYPEREF) {
+	resolveRef(t);
+    }
+.
+387d
+256a
+    } else if (s == program) {
+	fprintf(f, ".");
+.
+244a
+ */
+.
+243a
+/*
+ * Matches brace commented out above.
+.
+229a
+ */
+.
+227,228c
+/*
+ * Not today.
+    t = rtype(s->type);
+    if (t->class == ARRAY and not istypename(t->type, "char")) {
+	printf("ARRAY");
+.
+219a
+    Symbol t;
+.
+130a
+    if (isinternal(f)) {
+	n = 0;
+    }
+.
+120a
+ *
+ * If the procedure or function is internal, the argument count is
+ * not valid so we ignore it.
+.
+44c
+    "procparam", "funcparam", "module", "tag", "common", "extref", "typeref"
+.
+4a
+static char rcsid[] = "$Header: printsym.c,v 1.3 84/03/27 10:23:14 linton Exp $";
+
+.
+wq
+'endex'
+
+echo process.c
+ex - process.c <<'endex'
+1103,1104c
+Fileid oldfd;
+Fileid newfd;
+.
+1101a
+private infrom (filename)
+String filename;
+{
+    Fileid in;
+
+    in = open(filename, 0);
+    if (in == -1) {
+	write(2, "can't read ", 11);
+	write(2, filename, strlen(filename));
+	write(2, "\n", 1);
+	_exit(1);
+    }
+    fswap(0, in);
+}
+
+/*
+ * Redirect standard output.
+ * Same assumptions as for "infrom" above.
+ */
+
+private outto (filename)
+String filename;
+{
+    Fileid out;
+
+    out = creat(filename, 0666);
+    if (out == -1) {
+	write(2, "can't write ", 12);
+	write(2, filename, strlen(filename));
+	write(2, "\n", 1);
+	_exit(1);
+    }
+    fswap(1, out);
+}
+
+/*
+ * Swap file numbers, useful for redirecting standard input or output.
+ */
+
+.
+1099c
+ * Redirect input.
+ * Assuming this is called from a child, we should be careful to avoid
+ * (possibly) shared standard I/O buffers.
+.
+933a
+ * Return the address associated with the current signal.
+ * (Plus two since the address points to the beginning of a procedure).
+ */
+
+public Address usignal (p)
+Process p;
+{
+    Address r;
+
+    r = p->sigstatus;
+    if (r != 0 and r != 1) {
+	r += 2;
+    }
+    return r;
+}
+
+/*
+.
+919c
+	if (istraced(p) and (p->sigstatus == 0 or p->sigstatus == 1)) {
+.
+903a
+	addr = (Address) &(((struct user *) 0)->u_signal[p->signo]);
+	p->sigstatus = (Address) ptrace(UREAD, p->pid, addr, 0);
+.
+893a
+	p->reg[PROGCTR] = 0;
+.
+887a
+    Address addr;
+.
+813a
+    if (traceexec) {
+	printf("!! pstep to pc 0x%x on signal %d\n", p->reg[PROGCTR], p->signo);
+	fflush(stdout);
+    }
+    if (p->status != STOPPED) {
+	error("program unexpectedly exited with %d\n", p->exitval);
+    }
+.
+810c
+    if (ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo) < 0) {
+	panic("error %d trying to step process", errno);
+    }
+.
+808c
+    setinfo(p, signo);
+    if (traceexec) {
+	printf("!! pstep from pc 0x%x with signal %d (%d)\n",
+	    p->reg[PROGCTR], signo, p->signo);
+	fflush(stdout);
+    }
+.
+804a
+integer signo;
+.
+803c
+public pstep(p, signo)
+.
+796a
+    if (traceexec) {
+	printf("!! pcont to 0x%x on signal %d\n", p->reg[PROGCTR], p->signo);
+	fflush(stdout);
+    }
+.
+795a
+	if (traceexec and not istraced(p)) {
+	    printf("!! ignored signal %d at 0x%x\n", p->signo, p->reg[PROGCTR]);
+	    fflush(stdout);
+	}
+	s = p->signo;
+.
+788c
+	setinfo(p, s);
+	if (traceexec) {
+	    printf("!! pcont from 0x%x with signal %d (%d)\n",
+		p->reg[PROGCTR], s, p->signo);
+	    fflush(stdout);
+	}
+.
+786a
+    s = signo;
+.
+782c
+    int s, status;
+.
+768a
+ * Terminate a ptrace'd process.
+ */
+
+public pterm (p)
+Process p;
+{
+    integer status;
+
+    if (p != nil and p->pid != 0) {
+	ptrace(PKILL, p->pid, 0, 0);
+	pwait(p->pid, &status);
+	unptraced(p->pid);
+    }
+}
+
+/*
+.
+745,752c
+	    outto(outfile);
+.
+735,742c
+	    infrom(infile);
+.
+722,725c
+    if (p->pid != 0) {
+	pterm(p);
+.
+720d
+489d
+473c
+	setcurfunc(whatblock(pc));
+.
+458a
+    curpc = process->reg[PROGCTR];
+    if (addr != curpc) {
+	if (traceexec) {
+	    printf("!! stepping from 0x%x to 0x%x\n", curpc, addr);
+	}
+	if (catchbps) {
+	    setallbps();
+	}
+	setbp(addr);
+	resume(DEFSIG);
+	unsetbp(addr);
+	if (catchbps) {
+	    unsetallbps();
+	}
+	if (not isbperr()) {
+	    printstatus();
+	}
+    }
+.
+453,457c
+    xto(addr, false);
+}
+
+private contto (addr)
+Address addr;
+{
+    xto(addr, true);
+}
+
+private xto (addr, catchbps)
+Address addr;
+boolean catchbps;
+{
+    Address curpc;
+
+    if (catchbps) {
+	stepover();
+.
+441a
+    if (traceexec) {
+	printf("!! stepped over to 0x%x\n", process->reg[PROGCTR]);
+    }
+.
+433a
+    if (traceexec) {
+	printf("!! stepping over 0x%x\n", process->reg[PROGCTR]);
+    }
+.
+430c
+public stepover()
+.
+421a
+ * Continue execution until the current function returns, or,
+ * if the given argument is non-nil, until execution returns to
+ * somewhere within the given function.
+ */
+
+public rtnfunc (f)
+Symbol f;
+{
+    Address addr;
+    Symbol t;
+
+    if (not isstopped) {
+	error("can't continue execution");
+    } else if (f != nil and not isactive(f)) {
+	error("%s is not active", symname(f));
+    } else {
+	addr = return_addr();
+	if (addr == nil) {
+	    error("no place to return to");
+	} else {
+	    isstopped = false;
+	    contto(addr);
+	    if (f != nil) {
+		for (;;) {
+		    t = whatblock(pc);
+		    addr = return_addr();
+		if (t == f or addr == nil) break;
+		    contto(addr);
+		}
+	    }
+	    if (bpact() fails) {
+		isstopped = true;
+		printstatus();
+	    }
+	}
+    }
+}
+
+/*
+.
+417c
+    oldfrp = reg(FRP);
+    do {
+	dostep(true);
+	pc = reg(PROGCTR);
+	newfrp = reg(FRP);
+    } while (newfrp < oldfrp and newfrp != 0);
+.
+412a
+    Address oldfrp, newfrp;
+
+.
+374,378d
+368,371d
+328a
+	    s = DEFSIG;
+.
+327c
+	    resume(s);
+.
+321a
+    s = signo;
+.
+311a
+    integer s;
+
+.
+310c
+integer signo;
+.
+179c
+	setcurfunc(program);
+.
+72a
+    Address sigstatus;		/* process' handler for current signal */
+.
+47,48c
+ * A cache of the instruction segment is kept to reduce the number
+ * of system calls.  Might be better just to read the entire
+ * code space into memory.
+.
+26a
+#include <sys/dir.h>
+#include <sys/user.h>
+.
+4a
+static char rcsid[] = "$Header: process.c,v 1.3 84/03/27 10:23:24 linton Exp $";
+
+.
+wq
+'endex'
+
+echo runtime.c
+ex - runtime.c <<'endex'
+623a
+    curframerec = pop(struct Frame);
+    curframe = pop(Frame);
+.
+609a
+    push(Frame, curframe);
+    push(struct Frame, curframerec);
+.
+581,583c
+    if (chk) {
+	if (formal != nil) {
+	    sp = savesp;
+	    error("not enough parameters to %s", symname(proc));
+	}
+.
+568,578d
+563,566c
+	passparam(actual, formal);
+	if (formal != nil) {
+	    formal = formal->chain;
+.
+561c
+	    enderrmsg();
+.
+556,559c
+	assert(p->op == O_COMMA);
+	actual = p->value.arg[0];
+	if (not chkparam(actual, formal, chk)) {
+	    fprintf(stderr, " in call to %s", symname(proc));
+.
+554c
+    formal = proc->chain;
+    chk = (boolean) (not nosource(proc));
+.
+550a
+    boolean chk;
+.
+549d
+546,547c
+    Node p, actual;
+    Symbol formal;
+.
+541a
+private boolean chkparam (actual, formal, chk)
+Node actual;
+Symbol formal;
+boolean chk;
+{
+    boolean b;
+
+    b = true;
+    if (chk) {
+	if (formal == nil) {
+	    beginerrmsg();
+	    fprintf(stderr, "too many parameters");
+	    b = false;
+	} else if (not compatible(formal->type, actual->nodetype)) {
+	    beginerrmsg();
+	    fprintf(stderr, "type mismatch for %s", symname(formal));
+	    b = false;
+	}
+    }
+    if (b and formal != nil and isvarparam(formal) and
+	not isopenarray(formal->type) and actual->op != O_RVAL)
+    {
+	beginerrmsg();
+	fprintf(stderr, "expected variable, found \"");
+	prtree(stderr, actual);
+	fprintf(stderr, "\"");
+	b = false;
+    }
+    return b;
+}
+
+/*
+ * Pass an expression to a particular parameter.
+ *
+ * Normally we pass either the address or value, but in some cases
+ * (such as C strings) we want to copy the value onto the stack and
+ * pass its address.
+ */
+
+private passparam (actual, formal)
+Node actual;
+Symbol formal;
+{
+    boolean b;
+    Address addr;
+    Stack *savesp;
+    integer paramsize;
+
+    if (isvarparam(formal) and not isopenarray(formal->type)) {
+	addr = lval(actual->value.arg[0]);
+	push(Address, addr);
+    } else if (passaddr(formal, actual->nodetype)) {
+	savesp = sp;
+	eval(actual);
+	paramsize = sp - savesp;
+	setreg(STKP, reg(STKP) - paramsize);
+	dwrite(savesp, reg(STKP), paramsize);
+	sp = savesp;
+	push(Address, reg(STKP));
+	if (formal != nil and isopenarray(formal->type)) {
+	    push(integer, paramsize div size(formal->type->type));
+	}
+    } else {
+	eval(actual);
+    }
+}
+
+/*
+ * Evaluate an argument list left-to-right.
+ */
+
+.
+539c
+ * Check to see if an expression is correct for a given parameter.
+ * If the given parameter is false, don't worry about type inconsistencies.
+ *
+ * Return whether or not it is ok.
+.
+512c
+    cont(0);
+.
+401c
+    if (isinternal(f)) {
+	f->symvalue.funcv.beginaddr += 15;
+    } else {
+	f->symvalue.funcv.beginaddr += 2;
+    }
+.
+394a
+ * Set the current function to the given symbol.
+ * We must adjust "curframe" so that subsequent operations are
+ * not confused; for simplicity we simply clear it.
+ */
+
+public setcurfunc (f)
+Symbol f;
+{
+    curfunc = f;
+    curframe = nil;
+}
+
+/*
+ * Set curfunc to be N up/down the stack from its current value.
+ */
+
+public up (n)
+integer n;
+{
+    integer i;
+    Symbol f;
+    Frame frp;
+    boolean done;
+
+    if (not isactive(program)) {
+	error("program is not active");
+    } else if (curfunc == nil) {
+	error("no current function");
+    } else {
+	i = 0;
+	f = curfunc;
+	if (curframe != nil) {
+	    frp = curframe;
+	} else {
+	    frp = findframe(f);
+	}
+	done = false;
+	do {
+	    if (frp == nil) {
+		done = true;
+		error("not that many levels");
+	    } else if (i >= n) {
+		done = true;
+		curfunc = f;
+		curframe = &curframerec;
+		*curframe = *frp;
+	    } else if (f == program) {
+		done = true;
+		error("not that many levels");
+	    } else {
+		frp = nextfunc(frp, &f);
+	    }
+	    ++i;
+	} while (not done);
+    }
+}
+
+public down (n)
+integer n;
+{
+    integer i, depth;
+    register Frame frp;
+    Symbol f;
+    struct Frame frame;
+
+    if (not isactive(program)) {
+	error("program is not active");
+    } else if (curfunc == nil) {
+	error("no current function");
+    } else {
+	depth = 0;
+	frp = &frame;
+	getcurfunc(frp, &f);
+	if (curframe == nil) {
+	    curframe = &curframerec;
+	    *curframe = *(findframe(curfunc));
+	}
+	while ((f != curfunc or !frameeq(frp, curframe)) and f != nil) {
+	    frp = nextfunc(frp, &f);
+	    ++depth;
+	}
+	if (f == nil or n > depth) {
+	    error("not that many levels");
+	} else {
+	    depth -= n;
+	    frp = &frame;
+	    getcurfunc(frp, &f);
+	    for (i = 0; i < depth; i++) {
+		frp = nextfunc(frp, &f);
+		assert(frp != nil);
+	    }
+	    curfunc = f;
+	    *curframe = *frp;
+	}
+    }
+}
+
+/*
+.
+376,383c
+	    frp = nextfunc(frp, &f);
+.
+358,359c
+	getcurfunc(frp, &f);
+.
+349a
+    Symbol f;
+.
+347d
+168,169c
+	    } while (not done);
+	}
+.
+166a
+		} else if (p == program) {
+		    done = true;
+		    frp = nil;
+		} else {
+		    frp = nextfunc(frp, &p);
+		    if (frp == nil) {
+			done = true;
+		    }
+.
+158,165c
+	    do {
+		if (p == f) {
+.
+155,156c
+	if (f == curfunc and curframe != nil) {
+	    *frp = *curframe;
+	} else {
+	    done = false;
+.
+137a
+ * Get the current frame information in the given Frame and store the
+ * associated function in the given value-result parameter.
+ */
+
+private getcurfunc (frp, fp)
+Frame frp;
+Symbol *fp;
+{
+    getcurframe(frp);
+    *fp = whatblock(frp->save_pc);
+}
+
+/*
+ * Return the frame associated with the next function up the call stack, or
+ * nil if there is none.  The function is returned in a value-result parameter.
+ * For "inline" functions the statically outer function and same frame
+ * are returned.
+ */
+
+private Frame nextfunc (frp, fp)
+Frame frp;
+Symbol *fp;
+{
+    Symbol t;
+    Frame nfrp;
+
+    t = *fp;
+    checkref(t);
+    if (isinline(t)) {
+	t = container(t);
+	nfrp = frp;
+    } else {
+	nfrp = nextframe(frp);
+	if (nfrp == nil) {
+	    t = nil;
+	} else {
+	    t = whatblock(nfrp->save_pc);
+	}
+    }
+    *fp = t;
+    return nfrp;
+}
+
+/*
+.
+42a
+#define frameeq(f1, f2) ((f1)->save_fp == (f2)->save_fp)
+
+.
+40a
+private Frame curframe = nil;
+private struct Frame curframerec;
+.
+5a
+static char rcsid[] = "$Header: runtime.c,v 1.3 84/03/27 10:23:40 linton Exp $";
+
+.
+4c
+static char sccsid[] = "@(#)runtime.c 1.8 8/10/83";
+.
+wq
+'endex'
+
+echo scanner.c
+ex - scanner.c <<'endex'
+291c
+	} while (index(" \t\n!&<>*[]()'\"", *p) == nil);
+.
+255,258c
+	    fprintf(stderr, "^ syntax error");
+.
+253c
+	    fprintf(stderr, "^ unrecognized command");
+.
+251a
+	fprintf(stderr, "%s", linebuf);
+	if (start != 0) {
+	    fprintf(stderr, "%*c", start, ' ');
+	}
+.
+240,246c
+	p = prevchar;
+	start = p - &linebuf[0];
+.
+235,236c
+    register char *p;
+    register integer start;
+.
+128a
+    prevchar = curchar;
+.
+39c
+private Char *curchar, *prevchar;
+.
+4a
+static char rcsid[] = "$Header: scanner.c,v 1.3 84/03/27 10:23:50 linton Exp $";
+
+.
+wq
+'endex'
+
+echo source.c
+ex - source.c <<'endex'
+4a
+static char rcsid[] = "$Header: source.c,v 1.3 84/03/27 10:23:58 linton Exp $";
+
+.
+wq
+'endex'
+
+echo tree.c
+ex - tree.c <<'endex'
+584c
+ * A recursive tree search routine to test if two trees are equivalent.
+.
+320d
+107d
+4a
+static char rcsid[] = "$Header: tree.c,v 1.3 84/03/27 10:24:40 linton Exp $";
+
+.
+wq
+'endex'
+
+echo commands.y
+ex - commands.y <<'endex'
+878,881c
+    DOWN | DUMP | EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST |
+    MOD | NEXT | NEXTI | NIL | NOT | OR | PRINT | PSYM | QUIT |
+    RERUN | RETURN | RUN | SH | SKIP | SOURCE | STATUS | STEP | STEPI |
+    STOP | STOPI | TRACE | TRACEI | UP |
+.
+864a
+|
+    '.' name
+{
+	$$ = dot(build(O_SYM, program), $2);
+}
+.
+859a
+opt_qual_symbol:
+    symbol
+{
+	$$ = $1;
+}
+|
+    opt_qual_symbol '.' name
+{
+	$$ = dot($1, $3);
+}
+;
+.
+831a
+    '#' '(' exp ')' %prec UNARYSIGN
+{
+	$$ = concrete($3);
+}
+|
+.
+686c
+    exp '\\' opt_qual_symbol
+.
+561a
+integer_list:
+    INT
+{
+	$$ = build(O_LCON, $1);
+}
+|
+    INT integer_list
+{
+	$$ = build(O_COMMA, build(O_LCON, $1), $2);
+}
+;
+.
+557c
+    LIST opt_qual_symbol
+.
+427c
+	$$ = build(O_CALL, $2, $4);
+.
+425c
+    CALL term '(' opt_exp_list ')'
+.
+332a
+    STRING
+{
+	newarg($1);
+}
+|
+.
+320a
+|
+    RERUN shellmode
+{
+	fflush(stdout);
+}
+.
+318a
+	arginit();
+.
+312c
+    run arglist
+.
+309a
+|
+    WHATIS term
+{
+	$$ = build(O_WHATIS, $2);
+}
+|
+    WHEN event '{' actions '}'
+{
+	$$ = build(O_ADDEVENT, $2, $4);
+}
+|
+    WHEREIS symbol
+{
+	$$ = build(O_WHEREIS, $2);
+}
+|
+    WHICH symbol
+{
+	$$ = build(O_WHICH, $2);
+}
+.
+283,292d
+280c
+	$$ = build(O_UP, build(O_LCON, (long) $2));
+.
+278c
+    UP INT
+.
+275c
+	$$ = build(O_UP, build(O_LCON, (long) 1));
+.
+273c
+    UP
+.
+215a
+    RETURN
+{
+	$$ = build(O_RETURN, nil);
+}
+|
+    RETURN opt_qual_symbol
+{
+	$$ = build(O_RETURN, $2);
+}
+|
+.
+177c
+    FUNC opt_qual_symbol
+.
+161a
+    DOWN
+{
+	$$ = build(O_DOWN, build(O_LCON, (long) 1));
+}
+|
+    DOWN INT
+{
+	$$ = build(O_DOWN, build(O_LCON, (long) $2));
+}
+|
+.
+157c
+    DELETE integer_list
+.
+73c
+%type <y_node>	    integer_list alias_command list_command line_number
+.
+69c
+%type <y_node>      opt_qual_symbol symbol
+.
+65,67c
+%type <y_name>	    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS
+%type <y_name>	    STEP STEPI STOP STOPI TRACE TRACEI
+%type <y_name>	    UP USE WHATIS WHEN WHERE WHEREIS WHICH
+.
+62c
+%type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT
+%type <y_name>	    DEBUG DELETE DIV DOWN DUMP
+.
+28,29c
+    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS STEP STEPI
+    STOP STOPI TRACE TRACEI UP
+.
+26c
+    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DOWN DUMP
+.
+6a
+static char rcsid[] = "$Header: commands.y,v 1.3 84/03/27 10:19:59 linton Exp $";
+
+.
+wq
+'endex'
+
+echo stabstring.c
+ex - stabstring.c <<'endex'
+0a
+/*
+ * String information interpretation
+ *
+ * The string part of a stab entry is broken up into name and type information.
+ */
+
+static char rcsid[] = "$Header: stabstring.c,v 1.4 84/03/27 10:24:04 linton Exp $";
+
+#include "defs.h"
+#include "stabstring.h"
+#include "object.h"
+#include "main.h"
+#include "symbols.h"
+#include "names.h"
+#include "languages.h"
+#include <a.out.h>
+#include <ctype.h>
+
+#ifndef public
+#endif
+
+/*
+ * Special characters in symbol table information.
+ */
+
+#define TYPENAME 't'
+#define TAGNAME 'T'
+#define MODULEBEGIN 'm'
+#define EXTPROCEDURE 'P'
+#define PRIVPROCEDURE 'Q'
+#define INTPROCEDURE 'I'
+#define EXTFUNCTION 'F'
+#define PRIVFUNCTION 'f'
+#define INTFUNCTION 'J'
+#define EXTVAR 'G'
+#define MODULEVAR 'S'
+#define OWNVAR 'V'
+#define REGVAR 'r'
+#define VALUEPARAM 'p'
+#define VARIABLEPARAM 'v'
+#define LOCALVAR /* default */
+
+/*
+ * Type information special characters.
+ */
+
+#define T_SUBRANGE 'r'
+#define T_ARRAY 'a'
+#define T_OPENARRAY 'A'
+#define T_RECORD 's'
+#define T_UNION 'u'
+#define T_ENUM 'e'
+#define T_PTR '*'
+#define T_FUNCVAR 'f'
+#define T_PROCVAR 'p'
+#define T_IMPORTED 'i'
+#define T_SET 'S'
+#define T_OPAQUE 'o'
+
+/*
+ * Table of types indexed by per-file unique identification number.
+ */
+
+#define NTYPES 1000
+
+private Symbol typetable[NTYPES];
+
+public initTypeTable ()
+{
+    bzero(typetable, sizeof(typetable));
+    (*language_op(curlang, L_MODINIT))(typetable);
+}
+
+/*
+ * Put an nlist entry into the symbol table.
+ * If it's already there just add the associated information.
+ *
+ * Type information is encoded in the name following a ":".
+ */
+
+private Symbol constype();
+private Char *curchar;
+
+#define skipchar(ptr, ch) \
+{ \
+    if (*ptr != ch) { \
+	panic("expected char '%c', found '%s'", ch, ptr); \
+    } \
+    ++ptr; \
+}
+
+#define optchar(ptr, ch) \
+{ \
+    if (*ptr == ch) { \
+	++ptr; \
+    } \
+}
+
+#define chkcont(ptr) \
+{ \
+    if (*ptr == '?') { \
+	ptr = getcont(); \
+    } \
+}
+
+#define newSym(s, n) \
+{ \
+    s = insert(n); \
+    s->level = curblock->level + 1; \
+    s->language = curlang; \
+    s->block = curblock; \
+}
+
+#define makeVariable(s, n, off) \
+{ \
+    newSym(s, n); \
+    s->class = VAR; \
+    s->symvalue.offset = off; \
+    getType(s); \
+}
+
+#define makeParameter(s, n, cl, off) \
+{ \
+    newSym(s, n); \
+    s->class = cl; \
+    s->symvalue.offset = off; \
+    curparam->chain = s; \
+    curparam = s; \
+    getType(s); \
+}
+
+public entersym (name, np)
+String name;
+struct nlist *np;
+{
+    Symbol s;
+    char *p;
+    register Name n;
+    char c;
+
+    p = index(name, ':');
+    *p = '\0';
+    c = *(p+1);
+    n = identname(name, true);
+    chkUnnamedBlock();
+    curchar = p + 2;
+    switch (c) {
+	case TYPENAME:
+	    newSym(s, n);
+	    typeName(s);
+	    break;
+
+	case TAGNAME:
+	    newSym(s, n);
+	    tagName(s);
+	    break;
+
+	case MODULEBEGIN:
+	    newSym(s, n);
+	    publicRoutine(s, MODULE, np->n_value);
+	    curmodule = s;
+	    break;
+
+	case EXTPROCEDURE:
+	    newSym(s, n);
+	    publicRoutine(s, PROC, np->n_value);
+	    break;
+
+	case PRIVPROCEDURE:
+	    privateRoutine(&s, n, PROC, np->n_value);
+	    break;
+
+	case INTPROCEDURE:
+	    newSym(s, n);
+	    markInternal(s);
+	    publicRoutine(s, PROC, np->n_value);
+	    break;
+
+	case EXTFUNCTION:
+	    newSym(s, n);
+	    publicRoutine(s, FUNC, np->n_value);
+	    break;
+
+	case PRIVFUNCTION:
+	    privateRoutine(&s, n, FUNC, np->n_value);
+	    break;
+
+	case INTFUNCTION:
+	    newSym(s, n);
+	    markInternal(s);
+	    publicRoutine(s, FUNC, np->n_value);
+	    break;
+
+	case EXTVAR:
+	    find(s, n) where
+		s->level == program->level and s->class == VAR
+	    endfind(s);
+	    if (s == nil) {
+		makeVariable(s, n, np->n_value);
+		s->level = program->level;
+		s->block = program;
+		getExtRef(s);
+	    }
+	    break;
+
+	case MODULEVAR:
+	    if (curblock->class != MODULE) {
+		exitblock();
+	    }
+	    makeVariable(s, n, np->n_value);
+	    s->level = program->level;
+	    s->block = curmodule;
+	    getExtRef(s);
+	    break;
+
+	case OWNVAR:
+	    makeVariable(s, n, np->n_value);
+	    ownVariable(s, np->n_value);
+	    getExtRef(s);
+	    break;
+
+	case REGVAR:
+	    makeVariable(s, n, np->n_value);
+	    s->level = -(s->level);
+	    break;
+
+	case VALUEPARAM:
+	    makeParameter(s, n, VAR, np->n_value);
+	    break;
+
+	case VARIABLEPARAM:
+	    makeParameter(s, n, REF, np->n_value);
+	    break;
+
+	default:	/* local variable */
+	    --curchar;
+	    makeVariable(s, n, np->n_value);
+	    break;
+    }
+    if (tracesyms) {
+	printdecl(s);
+	fflush(stdout);
+    }
+}
+
+/*
+ * Enter a type name.
+ */
+
+private typeName (s)
+Symbol s;
+{
+    register integer i;
+
+    s->class = TYPE;
+    s->language = curlang;
+    s->block = curblock;
+    s->level = curblock->level + 1;
+    i = getint();
+    if (i == 0) {
+	panic("bad input on type \"%s\" at \"%s\"", symname(s), curchar);
+    } else if (i >= NTYPES) {
+	panic("too many types in file \"%s\"", curfilename());
+    }
+    /*
+     * A hack for C typedefs that don't create new types,
+     * e.g. typedef unsigned int Hashvalue;
+     *  or  typedef struct blah BLAH;
+     */
+    if (*curchar != '=') {
+	s->type = typetable[i];
+	if (s->type == nil) {
+	    s->type = symbol_alloc();
+	    typetable[i] = s->type;
+	}
+    } else {
+	if (typetable[i] != nil) {
+	    typetable[i]->language = curlang;
+	    typetable[i]->class = TYPE;
+	    typetable[i]->type = s;
+	} else {
+	    typetable[i] = s;
+	}
+	skipchar(curchar, '=');
+	getType(s);
+    }
+}
+
+/*
+ * Enter a tag name.
+ */
+
+private tagName (s)
+Symbol s;
+{
+    register integer i;
+
+    s->class = TAG;
+    i = getint();
+    if (i == 0) {
+	panic("bad input on tag \"%s\" at \"%s\"", symname(s), curchar);
+    } else if (i >= NTYPES) {
+	panic("too many types in file \"%s\"", curfilename());
+    }
+    if (typetable[i] != nil) {
+	typetable[i]->language = curlang;
+	typetable[i]->class = TYPE;
+	typetable[i]->type = s;
+    } else {
+	typetable[i] = s;
+    }
+    skipchar(curchar, '=');
+    getType(s);
+}
+
+/*
+ * Setup a symbol entry for a public procedure or function.
+ */
+
+private publicRoutine (s, class, addr)
+Symbol s;
+Symclass class;
+Address addr;
+{
+    enterRoutine(s, class);
+    s->level = program->level;
+}
+
+/*
+ * Setup a symbol entry for a private procedure or function.
+ */
+
+private privateRoutine (s, n, class, addr)
+Symbol *s;
+Name n;
+Symclass class;
+Address addr;
+{
+    Symbol t;
+    boolean isnew;
+
+    find(t, n) where
+	t->level == curmodule->level and t->class == class
+    endfind(t);
+    if (t == nil) {
+	isnew = true;
+	t = insert(n);
+    } else {
+	isnew = false;
+    }
+    t->language = curlang;
+    enterRoutine(t, class);
+    if (isnew) {
+	t->symvalue.funcv.src = false;
+	t->symvalue.funcv.inline = false;
+	t->symvalue.funcv.beginaddr = addr;
+	newfunc(t, codeloc(t));
+	findbeginning(t);
+    }
+    *s = t;
+}
+
+/*
+ * Set up for beginning a new procedure, function, or module.
+ * If it's a function, then read the type.
+ *
+ * If the next character is a ",", then read the name of the enclosing block.
+ * Otherwise assume the previous function, if any, is over, and the current
+ * routine is at the same level.
+ */
+
+private enterRoutine (s, class)
+Symbol s;
+Symclass class;
+{
+    s->class = class;
+    if (class == FUNC) {
+	getType(s);
+    }
+    if (s->class != MODULE) {
+	getExtRef(s);
+    } else if (*curchar == ',') {
+	++curchar;
+    }
+    if (*curchar != '\0') {
+	exitblock();
+	enterNestedBlock(s);
+    } else {
+	if (curblock->class == FUNC or curblock->class == PROC) {
+	    exitblock();
+	}
+	if (class == MODULE) {
+	    exitblock();
+	}
+	enterblock(s);
+    }
+    curparam = s;
+}
+
+/*
+ * Check to see if the stab string contains the name of the external
+ * reference.  If so, we create a symbol with that name and class EXTREF, and
+ * connect it to the given symbol.  This link is created so that when
+ * we see the linker symbol we can resolve it to the given symbol.
+ */
+
+private getExtRef (s)
+Symbol s;
+{
+    char *p;
+    Name n;
+    Symbol t;
+
+    if (*curchar == ',' and *(curchar + 1) != '\0') {
+	p = index(curchar + 1, ',');
+	*curchar = '\0';
+	if (p != nil) {
+	    *p = '\0';
+	    n = identname(curchar + 1, false);
+	    curchar = p + 1;
+	} else {
+	    n = identname(curchar + 1, true);
+	}
+	t = insert(n);
+	t->language = s->language;
+	t->class = EXTREF;
+	t->block = program;
+	t->level = program->level;
+	t->symvalue.extref = s;
+    }
+}
+
+/*
+ * Find a block with the given identifier in the given outer block.
+ * If not there, then create it.
+ */
+
+private Symbol findBlock (id, m)
+String id;
+Symbol m;
+{
+    Name n;
+    Symbol s;
+
+    n = identname(id, true);
+    find(s, n) where s->block == m and isblock(s) endfind(s);
+    if (s == nil) {
+	s = insert(n);
+	s->block = m;
+	s->language = curlang;
+	s->class = MODULE;
+	s->level = m->level + 1;
+    }
+    return s;
+}
+
+/*
+ * Enter a nested block.
+ * The block within which it is nested is described
+ * by "module{:module}[:proc]".
+ */
+
+private enterNestedBlock (b)
+Symbol b;
+{
+    register char *p, *q;
+    Symbol m, s;
+    Name n;
+
+    q = curchar;
+    p = index(q, ':');
+    m = program;
+    while (p != nil) {
+	*p = '\0';
+	m = findBlock(q, m);
+	q = p + 1;
+	p = index(q, ':');
+    }
+    if (*q != '\0') {
+	m = findBlock(q, m);
+    }
+    b->level = m->level + 1;
+    b->block = m;
+    pushBlock(b);
+}
+
+/*
+ * Enter a statically-allocated variable defined within a routine.
+ *
+ * Global BSS variables are chained together so we can resolve them
+ * when the start of common is determined.  The list is kept in order
+ * so that f77 can display all vars in a COMMON.
+ */
+
+private ownVariable (s, addr)
+Symbol s;
+Address addr;
+{
+    s->level = 1;
+    if (curcomm) {
+	if (commchain != nil) {
+	    commchain->symvalue.common.chain = s;
+	} else {
+	    curcomm->symvalue.common.offset = (integer) s;
+	}			  
+	commchain = s;
+	s->symvalue.common.offset = addr;
+	s->symvalue.common.chain = nil;
+    }
+}
+
+/*
+ * Get a type from the current stab string for the given symbol.
+ */
+
+private getType (s)
+Symbol s;
+{
+    s->type = constype(nil);
+    if (s->class == TAG) {
+	addtag(s);
+    }
+}
+
+/*
+ * Construct a type out of a string encoding.
+ *
+ * The forms of the string are
+ *
+ *	<number>
+ *	<number>=<type>
+ *	r<type>;<number>;<number>		-- subrange
+ *	a<type>;<type>				-- array[index] of element
+ *      A<type>					-- open array
+ *	s<size>{<name>:<type>;<number>;<number>}-- record
+ *	u<size>{<name>:<type>;<number>;<number>}-- union
+ *	*<type>					-- pointer
+ *	f<type>,<integer>;<paramlist>		-- function variable
+ *	p<integer>;<paramlist>			-- procedure variable
+ *	S<type>					-- set of type
+ *	o<name>[,<type>]			-- opaque type
+ *	i<name>,<type>				-- imported type
+ */
+
+private Rangetype getRangeBoundType();
+
+private Symbol constype (type)
+Symbol type;
+{
+    register Symbol t;
+    register integer n;
+    char class;
+
+    if (isdigit(*curchar)) {
+	n = getint();
+	if (n >= NTYPES) {
+	    panic("too many types in file \"%s\"", curfilename());
+	}
+	if (*curchar == '=') {
+	    if (typetable[n] != nil) {
+		t = typetable[n];
+	    } else {
+		t = symbol_alloc();
+		typetable[n] = t;
+	    }
+	    ++curchar;
+	    constype(t);
+	} else {
+	    t = typetable[n];
+	    if (t == nil) {
+		t = symbol_alloc();
+		typetable[n] = t;
+	    }
+	}
+    } else {
+	if (type == nil) {
+	    t = symbol_alloc();
+	} else {
+	    t = type;
+	}
+	t->language = curlang;
+	t->level = curblock->level + 1;
+	t->block = curblock;
+	class = *curchar++;
+	switch (class) {
+	    case T_SUBRANGE:
+		consSubrange(t);
+		break;
+
+	    case T_ARRAY:
+		t->class = ARRAY;
+		t->chain = constype(nil);
+		skipchar(curchar, ';');
+		chkcont(curchar);
+		t->type = constype(nil);
+		break;
+
+	    case T_OPENARRAY:
+		t->class = ARRAY;
+		t->chain = t_open;
+		t->type = constype(nil);
+		break;
+
+	    case T_RECORD:
+		consRecord(t, RECORD);
+		break;
+
+	    case T_UNION:
+		consRecord(t, VARNT);
+		break;
+
+	    case T_ENUM:
+		consEnum(t);
+		break;
+
+	    case T_PTR:
+		t->class = PTR;
+		t->type = constype(nil);
+		break;
+
+	    /*
+	     * C function variables are different from Modula-2's.
+	     */
+	    case T_FUNCVAR:
+		t->class = FFUNC;
+		t->type = constype(nil);
+		if (not streq(language_name(curlang), "c")) {
+		    skipchar(curchar, ',');
+		    consParamlist(t);
+		}
+		break;
+
+	    case T_PROCVAR:
+		t->class = FPROC;
+		consParamlist(t);
+		break;
+
+	    case T_IMPORTED:
+		consImpType(t);
+		break;
+
+	    case T_SET:
+		t->class = SET;
+		t->type = constype(nil);
+		break;
+
+	    case T_OPAQUE:
+		consOpaqType(t);
+		break;
+
+	    default:
+		badcaseval(class);
+	}
+    }
+    return t;
+}
+
+/*
+ * Construct a subrange type.
+ */
+
+private consSubrange (t)
+Symbol t;
+{
+    t->class = RANGE;
+    t->type = constype(nil);
+    skipchar(curchar, ';');
+    chkcont(curchar);
+    t->symvalue.rangev.lowertype = getRangeBoundType();
+    t->symvalue.rangev.lower = getint();
+    skipchar(curchar, ';');
+    chkcont(curchar);
+    t->symvalue.rangev.uppertype = getRangeBoundType();
+    t->symvalue.rangev.upper = getint();
+}
+
+/*
+ * Figure out the bound type of a range.
+ *
+ * Some letters indicate a dynamic bound, ie what follows
+ * is the offset from the fp which contains the bound; this will
+ * need a different encoding when pc a['A'..'Z'] is
+ * added; J is a special flag to handle fortran a(*) bounds
+ */
+
+private Rangetype getRangeBoundType ()
+{
+    Rangetype r;
+
+    switch (*curchar) {
+	case 'A':
+	    r = R_ARG;
+	    curchar++;
+	    break;
+
+	case 'T':
+	    r = R_TEMP;
+	    curchar++;
+	    break;
+
+	case 'J': 
+	    r = R_ADJUST;
+	    curchar++;
+	    break;
+
+	default:
+	    r = R_CONST;
+	    break;
+    }
+    return r;
+}
+
+/*
+ * Construct a record or union type.
+ */
+
+private consRecord (t, class)
+Symbol t;
+Symclass class;
+{
+    register Symbol u;
+    register char *cur, *p;
+    Name name;
+    integer d;
+
+    t->class = class;
+    t->symvalue.offset = getint();
+    d = curblock->level + 1;
+    u = t;
+    cur = curchar;
+    while (*cur != ';' and *cur != '\0') {
+	p = index(cur, ':');
+	if (p == nil) {
+	    panic("index(\"%s\", ':') failed", curchar);
+	}
+	*p = '\0';
+	name = identname(cur, true);
+	u->chain = newSymbol(name, d, FIELD, nil, nil);
+	cur = p + 1;
+	u = u->chain;
+	u->language = curlang;
+	curchar = cur;
+	u->type = constype(nil);
+	skipchar(curchar, ',');
+	u->symvalue.field.offset = getint();
+	skipchar(curchar, ',');
+	u->symvalue.field.length = getint();
+	skipchar(curchar, ';');
+	chkcont(curchar);
+	cur = curchar;
+    }
+    if (*cur == ';') {
+	++cur;
+    }
+    curchar = cur;
+}
+
+/*
+ * Construct an enumeration type.
+ */
+
+private consEnum (t)
+Symbol t;
+{
+    register Symbol u;
+    register char *p;
+    register integer count;
+
+    t->class = SCAL;
+    count = 0;
+    u = t;
+    while (*curchar != ';' and *curchar != '\0') {
+	p = index(curchar, ':');
+	assert(p != nil);
+	*p = '\0';
+	u->chain = insert(identname(curchar, true));
+	curchar = p + 1;
+	u = u->chain;
+	u->language = curlang;
+	u->class = CONST;
+	u->level = curblock->level + 1;
+	u->block = curblock;
+	u->type = t;
+	u->symvalue.iconval = getint();
+	++count;
+	skipchar(curchar, ',');
+	chkcont(curchar);
+    }
+    if (*curchar == ';') {
+	++curchar;
+    }
+    t->symvalue.iconval = count;
+}
+
+/*
+ * Construct a parameter list for a function or procedure variable.
+ */
+
+private consParamlist (t)
+Symbol t;
+{
+    Symbol p;
+    integer i, d, n, paramclass;
+
+    n = getint();
+    skipchar(curchar, ';');
+    p = t;
+    d = curblock->level + 1;
+    for (i = 0; i < n; i++) {
+	p->chain = newSymbol(nil, d, VAR, nil, nil);
+	p = p->chain;
+	p->type = constype(nil);
+	skipchar(curchar, ',');
+	paramclass = getint();
+	if (paramclass == 0) {
+	    p->class = REF;
+	}
+	skipchar(curchar, ';');
+	chkcont(curchar);
+    }
+}
+
+/*
+ * Construct an imported type.
+ * Add it to a list of symbols to get fixed up.
+ */
+
+private consImpType (t)
+Symbol t;
+{
+    register char *p;
+    Symbol tmp;
+
+    p = curchar;
+    while (*p != ',' and *p != ';' and *p != '\0') {
+	++p;
+    }
+    if (*p == '\0') {
+	panic("bad import symbol entry '%s'", curchar);
+    }
+    t->class = TYPEREF;
+    t->symvalue.typeref = curchar;
+    curchar = p + 1;
+    if (*p == ',') {
+	curchar = p + 1;
+	tmp = constype(nil);
+    }
+    skipchar(curchar, ';');
+    *p = '\0';
+}
+
+/*
+ * Construct an opaque type entry.
+ */
+
+private consOpaqType (t)
+Symbol t;
+{
+    register char *p;
+    register Symbol s;
+    register Name n;
+    boolean def;
+
+    p = curchar;
+    while (*p != ';' and *p != ',') {
+	if (*p == '\0') {
+	    panic("bad opaque symbol entry '%s'", curchar);
+	}
+	++p;
+    }
+    def = (Boolean) (*p == ',');
+    *p = '\0';
+    n = identname(curchar, true);
+    find(s, n) where s->class == TYPEREF endfind(s);
+    if (s == nil) {
+	s = insert(n);
+	s->class = TYPEREF;
+	s->type = nil;
+    }
+    curchar = p + 1;
+    if (def) {
+	s->type = constype(nil);
+	skipchar(curchar, ';');
+    }
+    t->class = TYPE;
+    t->type = s;
+}
+
+/*
+ * Read an integer from the current position in the type string.
+ */
+
+private integer getint ()
+{
+    register integer n;
+    register char *p;
+    register Boolean isneg;
+
+    n = 0;
+    p = curchar;
+    if (*p == '-') {
+	isneg = true;
+	++p;
+    } else {
+	isneg = false;
+    }
+    while (isdigit(*p)) {
+	n = 10*n + (*p - '0');
+	++p;
+    }
+    curchar = p;
+    return isneg ? (-n) : n;
+}
+
+/*
+ * Add a tag name.  This is a kludge to be able to refer
+ * to tags that have the same name as some other symbol
+ * in the same block.
+ */
+
+private addtag (s)
+register Symbol s;
+{
+    register Symbol t;
+    char buf[100];
+
+    sprintf(buf, "$$%.90s", ident(s->name));
+    t = insert(identname(buf, false));
+    t->language = s->language;
+    t->class = TAG;
+    t->type = s->type;
+    t->block = s->block;
+}
+.
+wq
+'endex'
+
+echo symbols.c
+ex - symbols.c <<'endex'
+1200,1205c
+    len = p - str;
+    if (len == 1) {
+	s = t_char;
+    } else {
+	s = newSymbol(nil, 0, ARRAY, t_char, nil);
+	s->language = primlang;
+	s->chain = newSymbol(nil, 0, RANGE, t_int, nil);
+	s->chain->language = s->language;
+	s->chain->symvalue.rangev.lower = 1;
+	s->chain->symvalue.rangev.upper = len + 1;
+    }
+.
+1187a
+    integer len;
+.
+1179,1180c
+ * Construct a node for the type of a string.
+.
+1134,1139c
+    } else {
+	return ((*language_op(t->language, L_EVALAREF)) (s, i));
+    }
+.
+1131,1132c
+    t = rtype(s);
+    if (t->language == nil) {
+.
+1129c
+    Symbol t;
+.
+1113,1118c
+    } else {
+	return (Node) (*language_op(t->language, L_BUILDAREF))(a, slist);
+    }
+.
+1110,1111c
+    t = rtype(a->nodetype);
+    if (t->language == nil) {
+.
+1108c
+    Symbol t;
+.
+1043,1044c
+    *tp = tree;
+.
+1040c
+    } else if (op != O_NOP and s != t) {
+.
+1037,1038c
+	fprintf(stderr, "expected integer or real, found \"");
+	prtree(stderr, tree);
+	fprintf(stderr, "\"");
+.
+1035c
+    } else if (not compatible(s, t)) {
+.
+1032,1033c
+    t = rtype(typeto);
+    if (compatible(t, t_real) and compatible(s, t_int)) {
+.
+1029,1030c
+    tree = *tp;
+.
+1027c
+    Node tree;
+    Symbol s, t;
+.
+981a
+ * Process a binary arithmetic or relational operator.
+ * Convert from integer to real if necessary.
+ */
+
+private binaryop (p, t)
+Node p;
+Symbol t;
+{
+    Node p1, p2;
+    Boolean t1real, t2real;
+    Symbol t1, t2;
+
+    p1 = p->value.arg[0];
+    p2 = p->value.arg[1];
+    t1 = rtype(p1->nodetype);
+    t2 = rtype(p2->nodetype);
+    t1real = compatible(t1, t_real);
+    t2real = compatible(t2, t_real);
+    if (t1real or t2real) {
+	p->op = (Operator) (ord(p->op) + 1);
+	if (not t1real) {
+	    p->value.arg[0] = build(O_ITOF, p1);
+	} else if (not t2real) {
+	    p->value.arg[1] = build(O_ITOF, p2);
+	}
+	p->nodetype = t_real;
+    } else {
+	if (size(p1->nodetype) > sizeof(integer)) {
+	    beginerrmsg();
+	    fprintf(stderr, "operation not defined on \"");
+	    prtree(stderr, p1);
+	    fprintf(stderr, "\"");
+	    enderrmsg();
+	} else if (size(p2->nodetype) > sizeof(integer)) {
+	    beginerrmsg();
+	    fprintf(stderr, "operation not defined on \"");
+	    prtree(stderr, p2);
+	    fprintf(stderr, "\"");
+	    enderrmsg();
+	}
+	p->nodetype = t_int;
+    }
+    if (t != nil) {
+	p->nodetype = t;
+    }
+}
+
+/*
+.
+949d
+916,947c
+	    binaryop(p, t_boolean);
+.
+909a
+	    binaryop(p, nil);
+	    break;
+
+.
+898c
+		    fprintf(stderr, "\" is improper type");
+.
+896a
+		    fprintf(stderr, "\"");
+.
+878a
+	/*
+	 * Perform a cast if the call is of the form "type(expr)".
+	 */
+.
+779a
+ * Determine if a (value) parameter should actually be passed by address.
+ */
+
+public boolean passaddr (p, exprtype)
+Symbol p, exprtype;
+{
+    boolean b;
+    Language def;
+
+    if (p == nil) {
+	def = findlanguage(".c");
+	b = (boolean) (*language_op(def, L_PASSADDR))(p, exprtype);
+    } else if (p->language == nil or p->language == primlang) {
+	b = false;
+    } else if (isopenarray(p->type)) {
+	b = true;
+    } else {
+	b = (boolean) (*language_op(p->language, L_PASSADDR))(p, exprtype);
+    }
+    return b;
+}
+
+/*
+.
+774c
+	t->class == TYPE and streq(ident(t->name), name)
+.
+755c
+	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+.
+751,753c
+	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+    } else if (isbuiltin(t1) or isbuiltin(t1->type)) {
+	b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
+.
+748,749c
+	if (t2->language == nil) {
+	    b = false;
+	} else {
+	    b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
+	}
+.
+746a
+    } else if (t1->language == primlang) {
+	if (t2->language == primlang) {
+	    rt1 = rtype(t1);
+	    rt2 = rtype(t2);
+	    b = (boolean) (
+		(rt1->type == t_open and rt2->type == t_int) or
+		(rt2->type == t_open and rt1->type == t_int) or
+		rt1 == rt2
+	    );
+	} else {
+	    b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
+	}
+    } else if (t2->language == primlang) {
+	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+.
+737a
+    Symbol rt1, rt2;
+.
+727a
+ * Mark a procedure or function as internal, meaning that it is called
+ * with a different calling sequence.
+ */
+
+public markInternal (s)
+Symbol s;
+{
+    s->symvalue.funcv.intern = true;
+}
+
+public boolean isinternal (s)
+Symbol s;
+{
+    return s->symvalue.funcv.intern;
+}
+
+/*
+.
+671a
+public Boolean isopenarray (t)
+Symbol t;
+{
+    return (Boolean) (t->class == ARRAY and t->chain == t_open);
+}
+
+/*
+ * Test if a symbol is a var parameter, i.e. has class REF but
+ * is not an open array parameter (those are treated special).
+ */
+
+.
+669c
+ * Test if a type is an open array parameter type.
+.
+646c
+	    r = 0;
+	    break;
+.
+644c
+		fprintf(stderr, "!! size(%s) ??", classname(t));
+.
+639a
+	case SET:
+	    u = rtype(t->type);
+	    switch (u->class) {
+		case RANGE:
+		    r = u->symvalue.rangev.upper - u->symvalue.rangev.lower + 1;
+		    break;
+
+		case SCAL:
+		    r = u->symvalue.iconval;
+		    break;
+
+		default:
+		    error("expected range for set base type");
+		    break;
+	    }
+	    r = (r + BITSPERBYTE - 1) div BITSPERBYTE;
+	    break;
+
+.
+599c
+	    off = t->symvalue.field.offset;
+	    len = t->symvalue.field.length;
+	    r = (off + len + 7) div 8 - (off div 8);
+	    /* r = (t->symvalue.field.length + 7) div 8; */
+.
+573a
+	    chkOpenArray(t);
+.
+548,565c
+		u = rtype(t);
+		findbounds(u, &lower, &upper);
+.
+528a
+	    } else if (lower > upper) {
+		/* unsigned long */
+		r = sizeof(long);
+.
+527c
+	    if (upper == 0 and lower > 0) {
+		/* real */
+.
+522a
+    if (t->class == TYPEREF) {
+	resolveRef(t);
+    }
+.
+519c
+    integer r, off, len;
+.
+516,517c
+    Symbol t;
+    Address a;
+    integer n;
+
+    if (sym->class == REF or sym->class == VAR) {
+	t = rtype(sym->type);
+	if (t->class == ARRAY and t->chain == t_open) {
+	    a = address(sym, nil);
+	    dread(&n, a + sizeof(Word), sizeof(n));
+	    t->chain->type->symvalue.rangev.upper = n - 1;
+	}
+    }
+}
+
+public findbounds (u, lower, upper)
+Symbol u;
+long *lower, *upper;
+{
+    Rangetype lbt, ubt;
+    long lb, ub;
+
+    if (u->class == RANGE) {
+	lbt = u->symvalue.rangev.lowertype;
+	ubt = u->symvalue.rangev.uppertype;
+	lb = u->symvalue.rangev.lower;
+	ub = u->symvalue.rangev.upper;
+	if (lbt == R_ARG or lbt == R_TEMP) {
+	    if (not getbound(u, lb, lbt, lower)) {
+		error("dynamic bounds not currently available");
+	    }
+	} else {
+	    *lower = lb;
+	}
+	if (ubt == R_ARG or ubt == R_TEMP) {
+	    if (not getbound(u, ub, ubt, upper)) {
+		error("dynamic bounds not currently available");
+	    }
+	} else {
+	    *upper = ub;
+	}
+    } else if (u->class == SCAL) {
+	*lower = 0;
+	*upper = u->symvalue.iconval - 1;
+    } else {
+	panic("unexpected array bound type");
+    }
+}
+
+public integer size(sym)
+Symbol sym;
+{
+    register Symbol s, t, u;
+    register integer nel, elsize;
+.
+513c
+/*
+ * When necessary, compute the upper bound for an open array (Modula-2 style).
+ */
+
+public chkOpenArray (sym)
+.
+488,489c
+	t != prev and t->block->class == MODULE and t->class == prev->class and
+	t->type != nil and t->type->type != nil and
+	t->type->type->class != BADUSE
+.
+453c
+    t->language = primlang;
+.
+395,397c
+#define isglobal(s)		(s->level == 1)
+#define islocaloff(s)		(s->level >= 2 and s->symvalue.offset < 0)
+#define isparamoff(s)		(s->level >= 2 and s->symvalue.offset >= 0)
+.
+369a
+/*
+ * Find the end of a module name.  Return nil if there is none
+ * in the given string.
+ */
+
+private String findModuleMark (s)
+String s;
+{
+    register char *p, *r;
+    register boolean done;
+
+    p = s;
+    done = false;
+    do {
+	if (*p == ':') {
+	    done = true;
+	    r = p;
+	} else if (*p == '\0') {
+	    done = true;
+	    r = nil;
+	} else {
+	    ++p;
+	}
+    } while (not done);
+    return r;
+}
+
+/*
+ * Resolve a type reference by modifying to be the appropriate type.
+ *
+ * If the reference has a name, then it refers to an opaque type and
+ * the actual type is directly accessible.  Otherwise, we must use
+ * the type reference string, which is of the form "module:{module:}name".
+ */
+
+public resolveRef (t)
+Symbol t;
+{
+    register char *p;
+    char *start;
+    Symbol s, m, outer;
+    Name n;
+
+    if (t->name != nil) {
+	s = t;
+    } else {
+	start = t->symvalue.typeref;
+	outer = program;
+	p = findModuleMark(start);
+	while (p != nil) {
+	    *p = '\0';
+	    n = identname(start, true);
+	    find(m, n) where m->block == outer endfind(m);
+	    if (m == nil) {
+		p = nil;
+		outer = nil;
+		s = nil;
+	    } else {
+		outer = m;
+		start = p + 1;
+		p = findModuleMark(start);
+	    }
+	}
+	if (outer != nil) {
+	    n = identname(start, true);
+	    find(s, n) where s->block == outer endfind(s);
+	}
+    }
+    if (s != nil and s->type != nil) {
+	t->name = s->type->name;
+	t->class = s->type->class;
+	t->type = s->type->type;
+	t->chain = s->type->chain;
+	t->symvalue = s->type->symvalue;
+	t->block = s->type->block;
+    }
+}
+
+.
+364a
+	    if (t->class == TYPEREF) {
+		resolveRef(t);
+	    }
+.
+362a
+	if (t->class == TYPEREF) {
+	    resolveRef(t);
+	}
+.
+320a
+    s->type->language = s->language;
+.
+319c
+    s->language = primlang;
+.
+294,306d
+263a
+ * Delete a symbol from the symbol table.
+ */
+
+public delete (s)
+Symbol s;
+{
+    register Symbol t;
+    register unsigned int h;
+
+    h = hash(s->name);
+    t = hashtab[h];
+    if (t == nil) {
+	panic("delete of non-symbol '%s'", symname(s));
+    } else if (t == s) {
+	hashtab[h] = s->next_sym;
+    } else {
+	while (t->next_sym != s) {
+	    t = t->next_sym;
+	    if (t == nil) {
+		panic("delete of non-symbol '%s'", symname(s));
+	    }
+	}
+	t->next_sym = s->next_sym;
+    }
+}
+
+/*
+.
+186d
+173,180c
+	printf(" symbols in %s \n",symname(func));
+	for(i=0; i< HASHTABLESIZE; i++)
+	   for(s=hashtab[i]; s != nil; s=s->next_sym)  {
+		if (s->block == func) psym(s);
+		}
+.
+170,171c
+  register Symbol s;
+  register Integer i;
+.
+102a
+#define isroutine(s) (Boolean) ( \
+    s->class == FUNC or s->class == PROC \
+)
+.
+92a
+Symbol t_open;
+.
+78a
+	String typeref;		/* type defined by "<module>:<type>" */
+	Symbol extref;		/* indirect symbol for external reference */
+.
+70,71c
+	    Boolean src : 1;	/* true if there is source line info */
+	    Boolean inline : 1;	/* true if no separate act. rec. */
+	    Boolean intern : 1; /* internal calling sequence */
+	    int unused : 13;
+.
+38c
+    FPROC, FFUNC, MODULE, TAG, COMMON, EXTREF, TYPEREF
+.
+4a
+static char rcsid[] = "$Header: symbols.c,v 1.4 84/03/27 10:24:18 linton Exp $";
+
+.
+3c
+static char sccsid[] = "@(#)symbols.c 1.10 8/10/83";
+.
+wq
+'endex'
+
+echo cerror.s
+ex - cerror.s <<'endex'
+4a
+# static char rcsid[] = "$Header: cerror.s,v 1.3 84/03/27 10:19:51 linton Exp $";
+#
+.
+wq
+'endex'
+
+echo defs.h
+ex - defs.h <<'endex'
+46a
+typedef Boolean boolean;
+.
+45a
+typedef double real;
+.
+43a
+typedef int integer;
+.
+1,2d
+wq
+'endex'

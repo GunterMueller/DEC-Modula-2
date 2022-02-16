@@ -1,0 +1,22 @@
+#
+set tarFile = tar.2.Jul.87
+
+echo Copying tar file to Modula-2 distribution tape
+dd if=$tarFile of=/dev/rmt0l bs=20b
+if ($status != 0) then
+    echo Error writing the tar file to tape
+    exit 1
+endif
+
+tar tvf /dev/rmt0l >& maketape.read
+if ($status != 0) then
+    echo Error checking the tape
+    exit 1
+endif
+awk -f awkread maketape.read > maketape.read1
+diff distfiles maketape.read1
+if ($status != 0) then
+    echo Error checking the tar file
+    exit 1
+endif
+echo Tar file successfully written and verified

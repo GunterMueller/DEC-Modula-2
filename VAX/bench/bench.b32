@@ -1,0 +1,1080 @@
+module bench(Main=main,optimize,optlevel=3,
+	     addressing_mode(nonexternal=long_relative))=
+begin
+%(  This is a suite of benchmarks that are relatively short, both in program
+    size and execution time.  It requires no input, and prints the execution
+    time for each program, using the system- dependent routine Getclock,
+    below, to find out the current CPU time.  It does a rudimentary check to
+    make sure each program gets the right output.  These programs were
+    gathered by John Hennessy and modified by Peter Nye. 
+
+    Translation into C by Forest Baskett.
+    Translation into Bliss by Brian Reid.
+)%
+	library 'sys$library:starlet';
+	external routine lib$put_output: addressing_mode(general);
+	bind    true = 1,     false = 0,    obufsize = 100;
+	own
+	    inbuf: vector[obufsize],
+	    outbuf: vector[obufsize,byte],
+	    result: word,		! used for system output interface
+	    odesc: vector[2] initial( obufsize, outbuf);
+
+  %( The following vile macro pretends to be a little like Unix printf )%
+	macro
+	    desc[]=%charcount(%remaining),uplit byte(%remaining) %,
+	    template[]=uplit( desc( %remaining )) %,
+	    CRLF = %string(%char(13),%char(10)) %,
+	    setupfoo [b] = foo[%count]=b %,
+	    bprintf(a)[] =   (local foo:vector[%length];
+			      setupfoo(%remaining);
+			      odesc[0] = obufsize;
+			      $FAOL(CTRSTR=template(a),
+				  OUTLEN=result,
+				  OUTBUF=odesc,
+				  PRMLST= foo);
+			      odesc[0] = .result;
+			      lib$put_output( odesc )) %,
+	    bprint(str) = lib$put_output(template(str)) %;
+
+macro	integer = long signed%,
+	real	= long signed%,
+	boolean = byte unsigned%,
+	Pvector	= REF vector%,
+	FSUB(A,B) = A-B%,
+	FADD(A,B) = A+B%,
+	FMUL(A,B) = A*B%,
+	FDIV(A,B) = A/B%,
+	FLOAT(A)  = A%;
+
+literal	nil	= 	0,		%( why bother when BLISS cant )%
+	dnfbase	=	%e'3.50',	%(   generate floating pt ops )%
+	bubblebase=	%e'1.61',	%(   anyhow? )%
+	xbubblebase=	161,
+	permbase=	%e'1.75',
+	xpermbase=	175,
+	queensbase=	%e'1.83',
+	xqueensbase=	183,
+	towersbase=	%e'2.39',
+	xtowersbase=	239,
+	quickbase= 	%e'1.92',
+	xquickbase=	192,
+	intmmbase=	%e'1.46',
+	xintmmbase=	146,
+	treebase=	%e'2.50',
+	xtreebase=	250,
+	mmbase	=	%e'0.73',
+	xmmbase=	73,
+	fpmmbase= 	%e'2.92',
+	puzzlebase= 	%e'0.50',
+	xpuzzlebase=	50,
+	fftbase	= 	%e'1.11',
+	xfftbase=	111,
+	fpfftbase=	%e'4.44';
+
+    %( Towers )%
+literal	maxcells= 	18;
+
+    %( Intmm, Mm )%
+literal	rowsize= 	40;
+
+    %( Puzzle )%
+literal	size	=	511,	%( d*d*d - 1 )%
+	classMax =	3,
+	typeMax	=	12,
+	d	=	8;
+structure Matrix[M,N;I,J] = [(I+1)*(J+1)*%UPVAL]
+		  (Matrix + N + M*J);
+structure ByteMatrix[M,N;I,J] = [(I+1)*(J+1)]
+		  (ByteMatrix + N + M*J);
+
+    %( Bubble, Quick )%
+literal	sortelements=	5000,
+	srtelements= 	500;
+
+    %( fft )%
+literal	fftsize=	256,
+	fftsize2=	129;
+
+    %( Perm )%
+literal	permrange=	10;
+
+   %( tree )%
+   structure node[M] = [3*%UPVAL] (node+M*%UPVAL);
+   literal left=0,right=1,val=2;
+
+ %(gads, this requirement for exact transliteration sure gives
+	    						 for awful code )%;
+
+    %( Towers )% %( discsizrange = 1..maxcells; )%
+   literal	stackrange=	3;
+
+   %(    cellcursor = 0..maxcells; )%
+   structure element[M] = [2] (element+M);
+   structure elementvector[M,F;N] = [(N+2)*2*%UPVAL]
+   	(elementvector + (2*M + F)*%UPVAL);
+   literal discsize=0, next=1;
+
+   %(    emsgtype = packed array[1..15] of char; )%
+   macro emsgtype = vector[ch$allocation(15)] %;
+
+
+    %( Intmm, Mm )%
+%(
+    index = 1 .. rowsize;
+    intmatrix = array [index,index] of integer;
+    realmatrix = array [index,index] of real;
+)%
+    structure org1matrix[M,N;I,J] = [I*J*%UPVAL]
+		  (org1Matrix + (N-1 + (M-1)*J)*%UPVAL);
+    macro intmatrix=org1matrix %,  realmatrix=org1matrix %;
+
+
+    %( Puzzle )%
+
+macro	pieceClass = classMax+1 %,
+	pieceType = typeMax+1 %,
+	position = size+1%;
+
+    %( Bubble, Quick )% %(
+    listsize = 0..sortelements;
+    sortarray = array [listsize] of integer;
+       )%
+    own sortarray: vector[sortelements+1];
+
+
+    %( FFT )%
+%(
+    struct    complex { float rp, ip; } ;
+    carray = array [1..fftsize] of complex ;
+    c2array = array [1..fftsize2] of complex ;
+)%
+    macro complex = vector[2]%, rp=0%, ip=1%;
+    structure compMatrix[M,N,F;I,J] = [I*J*2*%UPVAL]
+		  (compMatrix + (2*(N-1 + (M-1)*J) + F)*%UPVAL);
+    structure compVector[I,F;N] = [N*2*%UPVAL]
+    		  (compVector + (2*(I-1) + F)*%UPVAL);
+    own carray: compVector[fftsize], 
+        c2array: compVector[fftsize];
+
+    own		value: real,
+	 	fixed: real, floated: real;
+
+	    %( global )%
+    own 	timer:integer,
+    		xtimes:vector[11],
+		seed: integer;
+
+	    %( Perm )%
+    own		permarray: vector[permrange+1],
+		pctr:integer;
+
+	    %( tree )%
+
+    own		tree: REF node;
+
+    %( Towers )%
+
+    own		stack: vector[stackrange+1],
+  		cellspace: elementvector[maxcells],
+	        freelist: integer,
+	        movesdone: integer;
+
+
+    %( Intmm, Mm )%
+
+    own ima:matrix[rowsize+1,rowsize+1],
+        imb:matrix[rowsize+1,rowsize+1],
+        imr:matrix[rowsize+1,rowsize+1],
+        rma:matrix[rowsize+1,rowsize+1],
+        rmb:matrix[rowsize+1,rowsize+1],
+        rmr:matrix[rowsize+1,rowsize+1];
+
+    %( Puzzle )%
+own	pieceCount :	vector [pieceClass],
+	class	:	vector [pieceType],
+	pieceMax :	vector [pieceType],
+	puzzle	:	vector [position],
+	p	:	ByteMatrix [pieceType, position],
+	m,n,i,j,k,
+	kount;
+
+
+    %( Bubble, Quick )%
+own    sortlist: vector[sortelements+1],
+       biggest, littlest, top;
+
+
+    %( FFT )%
+own 	z: compVector[fftsize+1],
+	w: compVector[fftsize+1],
+	e: compVector[fftsize+1];
+own	    zr, zi: real;
+
+
+%( global procedures )%
+
+routine Getclock=
+begin
+    local ItemList:block[3];
+    local Buffer:long;
+    local t;
+    ItemList[2,0,32,0]=0; ItemList[1,0,32,0]=Buffer; %( easy part first )%
+    ItemList[0,0,16,0]=4; %( buffer length in bytes )%
+    ItemList[0,16,16,0]=jpi$_cputim;
+    $getjpi(itmlst=ItemList);
+    t = .Buffer
+end;
+
+routine PrintTime(SysTime):Novalue=
+begin
+    bprintf('!7UL.!2ZL',.SysTime/100,.SysTime MOD 100)
+end;
+
+
+routine Initrand=(seed = 74755);
+
+routine Rand=(seed = (.seed * 1309 + 13849) AND 65535);
+
+
+%( -------------------------------------------------------------------- )%
+%(    Permutation program, heavily recursive, written by Denny Brown.   )%
+%( -------------------------------------------------------------------- )%
+
+    routine Swap ( a,b ):novalue =
+    begin
+	local t;
+	t = ..a;  .a = ..b;  .b = .t
+    end;
+
+    routine Initialize :novalue =
+    begin
+	%( local i:integer; )%
+	incr i from 1 to 7 do permarray[.i] = .i-1
+    end;
+
+routine Permute(n):novalue =
+begin
+    local k;
+    pctr = .pctr + 1;
+    if  .n NEQ 1 then
+    begin
+	Permute(.n-1);
+	decr k from .n-1 to 1 do
+	begin
+	    Swap(permarray[.n],permarray[.k]);
+	    Permute(.n-1);
+	    Swap(permarray[.n],permarray[.k])
+	end
+    end
+end    %( permute )%;
+
+routine Perm:novalue=
+begin
+    pctr = 0;
+    incr i from 1 to 5 do
+    begin
+	Initialize();
+	Permute(7)
+    end;
+    if  .pctr NEQ 43300 then bprint(' Error in Perm.')
+end;
+
+
+%( -------------------------------------------------------------------- )%
+%( 		  Program to Solve the Towers of Hanoi 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine Error (emsg):Novalue= 
+    begin	
+	bprint(' Error in Towers:');
+	selectone .emsg of 
+	set
+	    [1]: bprint('out of space   ');
+	    [2]: bprint('disc size error');
+	    [3]: bprint('nothing to pop ')
+	tes;
+	emsg = .(-12)	%( die )%
+    end;
+
+    routine Makenull (s):Novalue=( stack[.s]=0 );
+
+    routine Getelement=
+    begin
+	local temp:integer;
+	if .freelist neq 0 then
+	begin
+	    temp = .freelist;
+	    freelist = .cellspace[.freelist,next]
+	end else
+	    Error(1);
+	.temp
+    end;
+
+    routine Push(i,s):Novalue=
+    begin
+        local errorfound:integer, localel:integer;
+	errorfound=false;
+%(	bprintf('Push(!UL, !UL)',.i,.s);				)%
+	if .i leq 0 then i = .(-3); %( die and get stack trace )%
+	if .stack[.s] gtr 0 then
+	begin
+	    if .cellspace[.stack[.s],discsize] LEQ .i then
+	    begin
+		errorfound=true;
+		Error(2)
+	    end
+	end;
+	if NOT .errorfound then
+	begin
+	    localel=Getelement();
+	    cellspace[.localel,next]=.stack[.s];
+	    stack[.s]=.localel;
+	    cellspace[.localel,discsize]=.i
+	end
+    end;
+ 
+    routine Init (s,n):Novalue=
+    begin
+	local discctr:integer;
+	Makenull(.s);
+	decr discctr from .n to 1 do Push(.discctr,.s)
+    end;
+
+    routine Pop (s)=
+    begin
+	local temp:integer, temp1:integer;
+	if .stack[.s] GTR 0 then
+	begin
+	    temp1 = .cellspace[.stack[.s],discsize];
+	    temp =  .cellspace[.stack[.s],next];
+	    cellspace[.stack[.s],next] = .freelist;
+	    freelist = .stack[.s];
+	    stack[.s]=.temp;
+	    .temp1
+	end else
+	    Error(3);
+%(      bprintf('Pop(!UW)=!UW',.s,.temp1);				)%
+	.temp1
+    end;
+
+    routine Move (s1,s2):Novalue=
+    begin
+	Push(Pop(.s1),.s2);
+	movesdone=.movesdone+1
+    end;
+
+    routine tower(i,j,k):Novalue=
+    begin
+	local other:integer;
+%(	bprintf('Tower(!UL,!UL,!UL)',.i,.j,.k);				)%
+	if .k EQL 1 then Move(.i,.j)
+	else begin
+	    other=6-.i-.j;
+	    tower(.i,.other,.k-1);
+	    Move(.i,.j);
+	    tower(.other,.j,.k-1)
+	end
+    end;
+
+
+routine Towers:Novalue=
+begin
+    incr i from 1 to maxcells do
+	cellspace[.i,next] = .i-1;
+    freelist=maxcells;
+    Init(1,14);
+    Makenull(2);
+    Makenull(3);
+    movesdone=0;
+    tower(1,2,14);
+    if .movesdone  NEQ  16383 then bprint(' Error in Towers.')
+end;
+
+%( -------------------------------------------------------------------- )%
+%( 		The eight queens problem, solved 50 times. 		)%
+%( -------------------------------------------------------------------- )%
+%(
+	type    
+	    doubleboard =   2..16;
+	    doublenorm  =   -7..7;
+	    boardrange  =   1..8;
+	    aarray      =   array [boardrange] of boolean;
+	    barray      =   array [doubleboard] of boolean;
+	    carray      =   array [doublenorm] of boolean;
+	    xarray      =   array [boardrange] of boardrange;
+)%
+
+	routine Try(i, q, a, b, c, x):Novalue=
+	begin
+	    map a:Pvector, b:Pvector, c:Pvector, x:Pvector;
+	    local j:integer;
+	    j = 0;
+	    .q = false;
+	    while  (NOT ..q) AND (.j NEQ 8) do
+	    begin
+	    	j = .j + 1;
+		.q = false;
+		if .b[.j] AND .a[.i+.j] AND .c[.i-.j+7] then
+		begin
+		    x[.i] = .j; b[.j] = false; a[.i+.j] = false;
+		    c[.i-.j+7] = false;
+		    if .i LSS 8 then
+		    begin
+			Try(.i+1,.q,.a,.b,.c,.x);
+			if  NOT ..q then
+			begin
+			    b[.j] = true; a[.i+.j] = true;
+			    c[.i-.j+7] = true
+			end
+		    end else
+		        .q = true
+		    end
+		end
+	    end;
+	
+    routine Doit:Novalue=
+    begin
+	local i:integer, q:integer;
+	local a:vector[9], b:vector[17], c:vector[15], x:vector[9];
+	i = 0 - 7;
+	while .i LEQ 16 do
+	begin
+	    if (.i GEQ 1) AND (.i LEQ 8) then a[.i] = true;
+	    if  .i GEQ 2  		 then b[.i] = true;
+	    if  .i LEQ 7 		 then c[.i+7] = true;
+	    i = .i + 1
+	end;
+
+	Try(1, q, b, a, c, x);
+	if NOT  .q then bprint(' Error in Queens.')
+    end;
+
+routine Queens:Novalue=   (incr i from 1 to 50 do Doit());
+
+
+
+%( -------------------------------------------------------------------- )%
+%(  		    Multiplies two integer matrices. 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine Initmatrix(m):Novalue=
+    begin
+	map m: REF matrix[rowsize+1,rowsize+1];
+	local temp;
+	incr i from 1 to rowsize do
+	    incr j from 1 to rowsize do
+	    begin
+		temp = Rand();
+		m[.i,.j] = .temp - (.temp/120)*120 - 60
+	    end
+    end;
+
+
+    %( computes the inner product of A[row,*] and B[*,column] )%
+    routine Innerproduct( result,a,b, row,column):Novalue=
+    begin
+	map a: REF matrix[rowsize+1,rowsize+1],
+	    b: REF matrix[rowsize+1,rowsize+1];
+	.result = 0;
+	incr i from 1 to rowsize do
+	    .result = ..result+.a[.row,.i]*.b[.i,.column]
+    end;
+
+routine Intmm:Novalue=
+begin
+    Initrand();
+    Initmatrix (ima);
+    Initmatrix (imb);
+    incr i from 1 to rowsize do
+    	incr j from 1 to rowsize do
+	    Innerproduct(imr[.i,.j],ima,imb,.i,.j)
+end;
+
+
+%( -------------------------------------------------------------------- )%
+%(	 	      Multiplies two real matrices. 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine rInitmatrix(m):Novalue=
+    begin
+	map m: REF matrix[rowsize+1,rowsize+1];
+	local temp:real;
+	incr i from 1 to rowsize do
+	    incr j from 1 to rowsize do
+	    begin
+		temp = Rand();
+		m[.i,.j] = FSUB(.temp,FSUB(FMUL((FDIV(.temp,120)),120),60))
+	    end
+    end;
+
+    routine rInnerproduct( result,a,b, row,column):Novalue=
+    begin
+	map a: REF matrix[rowsize+1,rowsize+1],
+	    b: REF matrix[rowsize+1,rowsize+1];
+	.result = %e'1.0';
+	incr i from 1 to rowsize do
+	    .result = FADD(..result,FMUL(.a[.row,.i],.b[.i,.column]))
+    end;
+
+routine Mm:Novalue=
+begin
+    Initrand();
+    rInitmatrix (rma);
+    rInitmatrix (rmb);
+    incr i from 1 to rowsize do
+    	incr j from 1 to rowsize do
+	    rInnerproduct(rmr[.i,.j],rma,rmb,.i,.j)
+end;
+
+
+
+%( -------------------------------------------------------------------- )%
+%(		The famous PUZZLE benchmark from Forest Baskett		)%
+%( -------------------------------------------------------------------- )%
+
+routine fit (i, j)=
+begin
+   	local plim;
+	plim = .pieceMax[.i];
+		incr k from 0 to .plim do
+			if .p[.i,.k] then
+				if .puzzle[.j+.k] then return false;
+	return True
+end;
+
+routine place (i, j)=
+begin
+        local plim;
+	plim = .pieceMax[.i];
+	incr k from 0 to .plim do
+		if .p[.i,.k] then puzzle[.j+.k] = true;
+	pieceCount[.class[.i]] = .pieceCount[.class[.i]] - 1;
+	incr k from .j to size do
+		if not .puzzle[.k] then return .k;
+	return 0
+end;
+
+routine remove(i, j):NoValue=
+begin
+	local plim;
+	plim = .pieceMax[.i];
+	incr k from 0 to .plim do
+		if .p[.i,.k] then puzzle[.j+.k] = false;
+	pieceCount[.class[.i]] = .pieceCount[.class[.i]] + 1;
+end;
+
+
+routine trial (j)=
+begin	
+	label iloop;
+	local k,retval;
+iloop:  begin
+             incr i from 0 to typeMax do
+             if .pieceCount[.class[.i]] neq 0 then 
+                 if fit(.i,.j) then begin
+                    k = place(.i,.j);
+                    if trial(.k) or (.k eql 0) then begin
+			retval = true;
+                       leave iloop;
+                    end else remove(.i,.j);
+                 end;
+	     retval = false;
+        end;
+	kount = .kount + 1;
+	.retval
+end;
+
+routine Puzz:Novalue =
+begin
+    incr m from 0 to size do puzzle[.m] = true;
+    incr i from 1 to 5 do incr j from 1 to 5 do incr k from 1 to 5 do
+	    puzzle[.i+d*(.j+d*.k)] = false;
+    incr i from 0 to typeMax do incr m from 0 to size do p[.i,.m] = false;
+    incr i from 0 to 3 do incr j from 0 to 1 do incr k from 0 to 0 do
+	    p[0,.i+d*(.j+d*.k)] = true;
+    class[0] = 0;
+    pieceMax[0] = 3+d*1+d*d*0;
+    incr i from 0 to 1 do incr j from 0 to 0 do incr k from 0 to 3 do
+	    p[1,.i+d*(.j+d*.k)] = true;
+    class[1] = 0;
+    pieceMax[1] = 1+d*0+d*d*3;
+    incr i from 0 to 0 do incr j from 0 to 3 do incr k from 0 to 1 do
+	    p[2,.i+d*(.j+d*.k)] = true;
+    class[2] = 0;
+    pieceMax[2] = 0+d*3+d*d*1;
+    incr i from 0 to 1 do incr j from 0 to 3 do incr k from 0 to 0 do
+	    p[3,.i+d*(.j+d*.k)] = true;
+    class[3] = 0;
+    pieceMax[3] = 1+d*3+d*d*0;
+    incr i from 0 to 3 do incr j from 0 to 0 do incr k from 0 to 1 do
+	    p[4,.i+d*(.j+d*.k)] = true;
+    class[4] = 0;
+    pieceMax[4] = 3+d*0+d*d*1;
+    incr i from 0 to 0 do incr j from 0 to 1 do incr k from 0 to 3 do
+	    p[5,.i+d*(.j+d*.k)] = true;
+    class[5] = 0;
+    pieceMax[5] = 0+d*1+d*d*3;
+    incr i from 0 to 2 do incr j from 0 to 0 do incr k from 0 to 0 do
+	    p[6,.i+d*(.j+d*.k)] = true;
+    class[6] = 1;
+    pieceMax[6] = 2+d*0+d*d*0;
+    incr i from 0 to 0 do incr j from 0 to 2 do incr k from 0 to 0 do
+	    p[7,.i+d*(.j+d*.k)] = true;
+    class[7] = 1;
+    pieceMax[7] = 0+d*2+d*d*0;
+    incr i from 0 to 0 do incr j from 0 to 0 do incr k from 0 to 2 do
+	    p[8,.i+d*(.j+d*.k)] = true;
+    class[8] = 1;
+    pieceMax[8] = 0+d*0+d*d*2;
+    incr i from 0 to 1 do incr j from 0 to 1 do incr k from 0 to 0 do
+	    p[9,.i+d*(.j+d*.k)] = true;
+    class[9] = 2;
+    pieceMax[9] = 1+d*1+d*d*0;
+    incr i from 0 to 1 do incr j from 0 to 0 do incr k from 0 to 1 do
+	    p[10,.i+d*(.j+d*.k)] = true;
+    class[10] = 2;
+    pieceMax[10] = 1+d*0+d*d*1;
+    incr i from 0 to 0 do incr j from 0 to 1 do incr k from 0 to 1 do
+	    p[11,.i+d*(.j+d*.k)] = true;
+    class[11] = 2;
+    pieceMax[11] = 0+d*1+d*d*1;
+    incr i from 0 to 1 do incr j from 0 to 1 do incr k from 0 to 1 do
+	    p[12,.i+d*(.j+d*.k)] = true;
+    class[12] = 3;
+    pieceMax[12] = 1+d*1+d*d*1;
+    pieceCount[0] = 13;
+    pieceCount[1] = 3;
+    pieceCount[2] = 1;
+    pieceCount[3] = 1;
+    m = 1+d*(1+d*1);
+    kount = 0;
+    if fit(0,.m) then n = place(0,.m) else 
+	bprint('Error 1 in puzzle');
+    if NOT trial(.n) 
+    then
+	bprint('Error 2 in Puzzle')
+    else begin
+	if .kount NEQ 2005 then bprintf('Error 3 in Puzzle (k=!UW)',.kount)
+    end
+end;
+
+
+
+
+%( -------------------------------------------------------------------- )%
+%(		    Sorts an array using quicksort 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine Initarr:Novalue=
+	begin
+	local temp;
+	Initrand();
+	biggest = 0; littlest = 0;
+	incr i from 1 to sortelements do
+	begin
+	    temp = Rand();
+	    sortlist[.i] = .temp - (.temp/100000)*100000 - 50000;
+	    if .sortlist[.i] GTR .biggest
+	    then
+		biggest = .sortlist[.i]
+	    else
+	    	if .sortlist[.i] LSS .littlest
+		then
+		    littlest = .sortlist[.i];
+	end
+    end;
+
+    routine Quicksort(a,l,r):Novalue=
+    begin
+	map a: REF vector;
+	local i,j,x,w;
+
+	i=.l; j=.r;
+	x=.a[(.l+.r) / 2];
+	do begin
+	    while .a[.i] LSS .x do i = .i+1;
+	    while .x LSS .a[.j] do j = .j-1;
+	    if .i LEQ .j then
+	    begin
+		w = .a[.i];
+		a[.i] = .a[.j];
+		a[.j] = .w;
+		i = .i+1;
+		j= .j-1
+	    end
+	end while .i LEQ .j;
+	if .l LSS .j then Quicksort(.a,.l,.j);
+	if .i LSS .r then Quicksort(.a,.i,.r)
+    end;
+
+
+routine Quick:Novalue=
+begin
+    Initarr();
+    Quicksort(sortlist,1,sortelements);
+    if (.sortlist[1] NEQ .littlest)
+      OR (.sortlist[sortelements] NEQ .biggest)
+	then bprint(' Error in Quick.')
+end;
+
+
+%( -------------------------------------------------------------------- )%
+%( 			Sorts an array using treesort 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine getcore(n)=
+    begin   	    %( quick and dirty fake to avoid learning VMS alloc )%
+	own corestash: vector[3*2*(sortelements+1)],
+	    coreptr: long INITIAL(0);
+	local value;
+	value=corestash[.coreptr];
+	coreptr = .coreptr+.n;
+	if .coreptr GTR 3*2*sortelements then %(die!)% (-2)();
+    	.value
+    end;
+
+
+    routine tInitarr:Novalue=
+    begin
+	local temp;
+	Initrand();
+	biggest = 0; littlest = 0;
+	incr i from 1 to sortelements do
+	begin
+	    temp = Rand();
+	    sortlist[.i] = .temp - (.temp/100000)*100000 - 50000;
+	    if .sortlist[.i] GTR .biggest
+	    then
+	    	biggest = .sortlist[.i]
+	    else if .sortlist[.i] LSS .littlest
+	        then
+		    littlest = .sortlist[.i]
+	end
+    end;
+
+
+
+    routine Insert(n, t):Novalue=
+    begin 	%( insert n into tree )%
+        map t: REF node;
+	routine CreateNode (n)=
+	begin
+	    local cell: REF node;
+	    cell = getcore(3);
+	    cell[left]=nil; cell[right]=nil; cell[val] = .n;
+	   .cell
+    	end;
+
+	if (.t EQL .t[left]) or (.t EQL .t[right]) then
+	   begin bprint('Loop in the tree!'); (-1)() end;
+	   if .n GTR .t[val] then
+	   begin
+		if .t[left] EQL nil then
+		    t[left]=CreateNode(.n)
+		else
+		    Insert(.n,.t[left])
+    	   end else if .n LSS .t[val] then
+	   begin
+		if .t[right] EQL nil then
+		    t[right]=CreateNode(.n)
+		else
+		    Insert(.n,.t[right])
+	   end
+    end;
+
+    routine Checktree(p)=
+    begin    %( check by inorder traversal )%
+	map p: REF node;
+	local result, t: REF node;
+        result = true;
+	    if (t=.p[left]) NEQ nil then
+		if .t[val] LEQ .p[val] then
+	       	    result=false
+		else result = Checktree(.p[left]) AND .result;
+	    if (t=.p[right]) NEQ nil then
+	        if .t[val] GEQ .p[val] then
+	       	    result = false
+		else result = Checktree(.p[right]) AND .result;
+        .result
+    end; 
+
+routine Trees:Novalue=
+begin
+    tInitarr();
+    tree = getcore(3);
+    tree[left] = nil; tree[right]=nil; tree[val]=.sortlist[1];
+    incr i from 2 to sortelements do
+    	Insert(.sortlist[.i],.tree);
+    if NOT Checktree(.tree) then bprint(' Error in Tree.')
+end;
+
+
+%( -------------------------------------------------------------------- )%
+%(		    Sorts an array using bubblesort 			)%
+%( -------------------------------------------------------------------- )%
+
+    routine bInitarr:Novalue=
+    begin
+	local temp;
+	Initrand();
+	biggest = 0; littlest = 0;
+	incr i from 1 to srtelements do
+	begin
+	    temp = Rand();
+	    sortlist[.i] = .temp - (.temp/100000)*100000 - 50000;
+	    if .sortlist[.i] GTR .biggest
+	        then
+		    biggest = .sortlist[.i]
+	        else if .sortlist[.i] LSS .littlest
+		    then littlest = .sortlist[.i]
+	end
+    end;
+
+
+routine Bubble:Novalue=
+begin
+    local i, j;
+    bInitarr();
+    top=srtelements;
+    while .top GTR 1 do
+    begin
+	i=1;
+	while .i LSS .top do
+	begin
+	    if .sortlist[.i] GTR .sortlist[.i+1] then
+	    begin
+		j = .sortlist[.i];
+		sortlist[.i] = .sortlist[.i+1];
+		sortlist[.i+1] = .j
+	    end;
+	    i=.i+1
+	end;
+	top=.top-1
+    end;
+    if (.sortlist[1] NEQ .littlest)
+      OR (.sortlist[srtelements]  NEQ .biggest) then
+	bprint( 'Error3 in Bubble.')
+    end;
+
+
+%( -------------------------------------------------------------------- )%
+%(			Fast Fourier Transform				)%
+%( -------------------------------------------------------------------- )%
+
+routine Cos (x)=
+begin	%( computes cos of x (x in radians) by an expansion )%
+    local factor:integer;
+    local power:real, result:real;
+
+   result = %e'1.0'; factor = 1;  power = .x;
+   incr i from 2 to 10 do
+   begin
+      factor = .factor * .i;  power = FMUL(.power,.x);
+      if (.i AND 1)  EQL  0 then
+      begin
+          if (.i AND 3) EQL 0
+	  then result = FADD(.result, FDIV(.power,FLOAT(.factor)))
+	  else result = FSUB(.result, FDIV(.power,FLOAT(.factor)))
+      end
+   end;
+   .result
+end;
+
+
+routine Min0(arg1,arg2)= (if .arg1 LSS .arg2 then .arg1 else .arg2);
+
+
+routine Printcomplex(arg1,arg2,zarray,start,finish,increment)=
+begin
+    map zarray: REF compVector;
+    local i;
+    i = .start;
+    do begin
+	local place: REF complex;
+	bprintf('  %15.3e%15.3e',.zarray[.i,rp],.zarray[.i,ip]) ;
+	i = .i + .increment;
+	bprintf('  %15.3e%15.3e',.zarray[.i,rp],.zarray[.i,ip]) ;
+	bprint(' ');
+	i = .i + .increment ;
+    end while .i LEQ .finish 
+end;
+
+
+routine Uniform11(iy, yfl):Novalue=
+begin
+    .iy = (4855*..iy + 1731) AND 8191;
+    .yfl = FDIV(FLOAT(..iy),%e'8192.0')
+end;
+
+routine Exptab(n, e):Novalue=
+begin
+    map e: REF compVector;
+    local theta:real, divisor:real, h:vector[26];
+    local i, j, k, l, m;
+
+    theta = %e'3.1415926536';
+    divisor = %e'4.0';
+    incr i from 1 to 25 do
+    begin
+	h[.i] = FDIV(%e'1.0',(FMUL(2,Cos(FDIV(.theta,.divisor)))));
+	divisor = FADD(.divisor,.divisor)
+    end;
+
+    m = .n / 2 ;
+    l = .m / 2 ;
+    j = 1 ;
+    e[1,rp] = %e'1.0';
+    e[1,ip] = %e'0.0';
+    e[.l+1,rp] = %e'0.0';
+    e[.l+1,ip] = %e'1.0';
+    e[.m+1,rp] = -%e'1.0';
+    e[.m+1,ip] = %e'0.0' ;
+
+    do begin
+	i = .l / 2 ;
+	k = .i ;
+
+	do begin
+	    e[.k+1,rp] = FMUL(.h[.j], FADD(e[.k+.i+1,rp],.e[.k-.i+1,rp]));
+	    e[.k+1,ip] = FMUL(.h[.j], FADD(e[.k+.i+1,ip],.e[.k-.i+1,ip]));
+	    k = .k+.l
+	end while .k LEQ .m;
+
+	j = Min0(.j+1, 25);
+	l = .i
+    end while .l GTR 1
+end %( exptab )% ;
+
+
+routine Fft( n, z, w, e, sqrinv):Novalue=
+begin
+    map z: REF compvector, w: REF compvector, e: REF compvector;
+    local i, j, k, l, m, index;
+    m = .n / 2 ; l = 1 ;
+    do begin
+	k = 0 ; j = .l ; i = 1 ;
+	do begin
+	    do begin
+		w[.i+.k,rp] = FADD(.z[.i,rp],.z[.m+.i,rp]);
+		w[.i+.k,ip] = FADD(.z[.i,ip],.z[.m+.i,ip]);
+		w[.i+.j,rp] = FSUB(
+		    FMUL(.e[.k+1,rp], FSUB(.z[.i,rp],.z[.i+.m,rp])),
+		    FMUL(.e[.k+1,ip], FSUB(.z[.i,ip],.z[.i+.m,ip])));
+		w[.i+.j,ip] = FADD(
+		    FMUL(.e[.k+1,rp], FSUB(.z[.i,ip],.z[.i+.m,ip])),
+		    FMUL(.e[.k+1,ip], FSUB(.z[.i,rp],.z[.i+.m,rp])));
+		i = .i+1
+	    end while .i LEQ .j;
+	    k = .j;
+	    j = .k+.l
+	end while .j LEQ .m;
+	%( z = w )%
+	incr i from 1 to .m do z[.i,rp]=.w[.i,rp]; z[.i,ip]=.w[.i,ip];
+	l = .l+.l 
+    end while .l LEQ .m;
+
+    incr i from 1 to .n do
+    begin
+	z[.i,rp] =  FMUL(.sqrinv,.z[.i,rp]);
+	z[.i,ip] = -FMUL(.sqrinv,.z[.i,ip])
+    end
+end;
+
+routine Oscar:Novalue=
+begin
+    Exptab(fftsize,e) ;
+    seed = 5767 ;
+    incr i from 1 to fftsize do
+    begin
+	Uniform11(seed, zr);
+	Uniform11(seed, zi);
+	z[.i,rp] = FSUB(FMUL(%e'20.0',.zr),%e'10.0');
+	z[.i,ip] = FSUB(FMUL(%e'20.0',.zi),%e'10.0')
+    end;
+
+
+    incr i from 1 to 20 do
+    begin
+       Fft(fftsize,z,w,e,%e'0.625')
+       %( Printcomplex( 6, 99, z, 1, 256, 17 ); )%
+    end;
+end %( oscar )% ;
+
+
+
+%( -------------------------------------------------------------------- )%
+%(		 The main program for all of this madness 		)%
+%( -------------------------------------------------------------------- )%
+
+
+routine main:Novalue=
+begin
+    fixed=0;	floated=%e'0.0';
+    bprint('    Perm'); timer=Getclock();
+    Perm();
+    xtimes[1]=Getclock()-.timer; PrintTime(.xtimes[1]);
+    fixed  = .fixed + xpermbase*.xtimes[1];
+    floated=FADD(.floated,FMUL(permbase,.xtimes[1]));
+
+    bprint('  Towers'); timer=Getclock();
+    Towers();
+    xtimes[2]=Getclock()-.timer; PrintTime(.xtimes[2]);
+    fixed  = .fixed + xtowersbase*.xtimes[2];
+    floated=FADD(.floated,FMUL(towersbase,.xtimes[2]));
+
+    bprint('  Queens'); timer=Getclock();
+    Queens();
+    xtimes[3]=Getclock()-.timer; PrintTime(.xtimes[3]);
+    fixed = .fixed + xqueensbase*.xtimes[3];
+    floated=FADD(.floated,FMUL(queensbase,.xtimes[3]));
+
+    bprint('   Intmm'); timer=Getclock();
+    Intmm();
+    xtimes[4]=Getclock()-.timer; PrintTime(.xtimes[4]);
+    fixed = .fixed + xintmmbase*.xtimes[4];
+    floated=FADD(.floated,FMUL(intmmbase,.xtimes[4]));
+
+    bprint('      Mm'); timer=Getclock();
+    Mm();
+    xtimes[5]=Getclock()-.timer; PrintTime(.xtimes[5]);
+    fixed = .fixed + xmmbase*.xtimes[5];
+    floated=FADD(.floated,FMUL(fpmmbase,.xtimes[5]));
+
+    bprint('  Puzzle'); timer=Getclock();
+    Puzz();
+    xtimes[6]=Getclock()-.timer; PrintTime(.xtimes[6]);
+    fixed = .fixed + xpuzzlebase*.xtimes[6];
+    floated=FADD(.floated,FMUL(puzzlebase,.xtimes[6]));
+
+    bprint('   Quick'); timer=Getclock();
+    Quick();
+    xtimes[7]=Getclock()-.timer; PrintTime(.xtimes[7]);
+    fixed = .fixed + xquickbase*.xtimes[7];
+    floated=FADD(.floated,FMUL(quickbase,.xtimes[7]));
+
+    bprint('  Bubble'); timer=Getclock();
+    Bubble();
+    xtimes[8]=Getclock()-.timer; PrintTime(.xtimes[8]);
+    fixed = .fixed + xbubblebase*.xtimes[8];
+    floated=FADD(.floated,FMUL(bubblebase,.xtimes[8]));
+
+    bprint('    Tree'); timer=Getclock();
+    Trees();
+    xtimes[9]=Getclock()-.timer; PrintTime(.xtimes[9]);
+    fixed = .fixed + xtreebase*.xtimes[9];
+    floated=FADD(.floated,FMUL(treebase,.xtimes[9]));
+
+    bprint('     FFT'); timer=Getclock();
+    Oscar();
+    xtimes[10]=Getclock()-.timer; PrintTime(.xtimes[10]);
+    fixed = .fixed + xfftbase*.xtimes[10];
+    floated=FADD(.floated,FMUL(fpfftbase,.xtimes[10]));
+
+    fixed = .fixed/1000;
+    bprint('Nonfloating point composite is'); PrintTime(.fixed);
+%(  bprintf('Floating point composite is %10.0f',FDIV(.floated,%e'10.0')); 
+  )%
+end;
+
+end eludom

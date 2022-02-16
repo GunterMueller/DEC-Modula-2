@@ -1,0 +1,135 @@
+definition module TypeDefs;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+
+from Machine import
+    HugeInteger;
+
+from Tokens import
+    Token;
+
+from Strings import
+    String;
+
+from Symbols import
+    TypeNode, FieldList, VariantList, VariantNode, IdentList,
+    ConstSetList, ConstNode, EnumNode, EnumList;
+    
+(* grammar+ *) procedure @external PointerType (toType : TypeNode;
+						option : Token) : TypeNode; 
+
+(* grammar *) procedure @external PointerForwardType (name   : String;
+						      option : Token) 
+		: TypeNode;
+
+(* grammar *) procedure @external SetType (setRange : TypeNode;
+					   order    : Token) : TypeNode; 
+
+(* grammar *) procedure @external ArrayType (indexType    : TypeNode; 
+					     elementType  : TypeNode;
+					     kind, option : Token) : TypeNode; 
+
+(* grammar *) procedure @external DynArrayType (elementType : TypeNode; 
+						arrayKind   : Token;
+						ptrKind     : Token) : TypeNode;
+
+(* grammar *) procedure @external EmptyFieldList () : FieldList;
+	
+(* grammar+ *) procedure @external AddToVariantList (list   : VariantList; 
+						     newOne : VariantNode)
+		: VariantList; 
+
+(* grammar *) procedure @external MakeFieldList(idents    : IdentList; 
+						fieldType : TypeNode)
+		: FieldList;
+	
+(* grammar *) procedure @external AppendFieldList(some, more : FieldList) 
+		: FieldList; 
+
+(* grammar *) procedure @external MakeVariant (tag       : ConstSetList; 
+					       fieldList : FieldList) 
+		: VariantNode;
+	
+(* grammar *) procedure @external MakeTagField (ident       : String; 
+						fieldType   : TypeNode;
+						variantList : VariantList;
+						elseVariant : VariantNode)
+		: FieldList; 
+
+(* grammar *) procedure @external RecordType (fieldList : FieldList;
+					      order     : Token) : TypeNode; 
+
+$if pascal then
+(* grammar *) procedure @external FileType(fileType : TypeNode) : TypeNode;
+$end
+
+(* grammar+ *) procedure @external MakeSubrange (low, up  : HugeInteger; 
+						 baseType : TypeNode)
+		: TypeNode; 
+
+(* grammar *) procedure @external SubrangeType (lower, upper : ConstNode; 
+						baseType     : TypeNode)
+		: TypeNode; 
+
+(* grammar *) procedure @external AddToEnumList (list   : EnumList;
+					         newOne : EnumNode) : EnumList;
+	
+(* grammar *) procedure @external EnumerationType(enumList : EnumList)
+		: TypeNode; 
+
+(* grammar *) procedure @external MakeEnumNode(name  : String;
+					       value : ConstNode) : EnumNode; 
+
+(* grammar+ *) procedure @external TypeWithSize(tn   : TypeNode;
+						size : ConstNode) : TypeNode;
+
+(* grammar *) procedure @external TypeWithAlign(tn        : TypeNode;
+					        alignment : ConstNode) 
+		: TypeNode;
+
+(* debug *) procedure PrintType(tn : TypeNode; indent : integer); 
+
+end TypeDefs.

@@ -1,0 +1,171 @@
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+DEFINITION MODULE IO;
+
+(* This is a dummy definition module to indicate what is in the		    *)
+(* the pseudo-module IO.  Note that all identifiers here are		    *)
+(* recognized regardless of case.					    *)
+
+(* This module is really a thin, type-checked layer over the standard C IO
+   library.  For more information about the underlying routines, you can use
+   the ``man'' program on the appropriate C procedure:
+
+   Modula-2 procedure       C procedure
+   ------------------       -----------
+    Open		    fopen
+    Close		    fclose
+    ReadB		    fread
+    WriteB		    fwrite
+    ReadC		    fgetc
+    WriteC		    fputc
+    ReadS		    fgets
+    WriteS		    fputs
+    ReadF		    fscanf
+    SReadF		    sscanf
+    WriteF		    fprintf
+    SWriteF		    sprintf
+*)
+
+(*********)
+(* Files *)
+(*********)
+
+TYPE
+    FILE;   (* Opaque file type, but can be compared to NIL *)
+
+VAR
+    input    : FILE;    (* UNIX standard file input  *)
+    output   : FILE;    (* UNIX standard file output *)
+    terminal : FILE;    (* UNIX standard file stderr *)
+
+PROCEDURE Open(CONST name : ARRAY @@NOCOUNT OF CHAR;
+               CONST mode : ARRAY @@NOCOUNT OF CHAR) : FILE;
+    (* Open a file: return opened file or nil *)
+    (* name : file name; mode = "r" for input, "w" for output *)
+
+PROCEDURE Close(f : FILE);
+    (* Close a file *)
+
+
+(*************)
+(* Binary IO *)
+(*************)
+
+PROCEDURE ReadB (    f      : FILE;
+                 VAR buff   : ARRAY @@NOCOUNT OF BYTE;
+                     length : INTEGER) : INTEGER;
+    (* Read binary data from a file *)
+    (* f : an open file; buff : variable to read into *)
+    (* length : number of bytes to read *)
+    (* return value : if read OK returns number of bytes read,
+       return 0 on error or end-of-file*)
+
+PROCEDURE WriteB(    f      : FILE;
+                 VAR buff   : ARRAY @@NOCOUNT OF BYTE;
+                     length : INTEGER);
+    (* Write binary data to a file *)
+    (* f : an open file; buff : variable to write *)
+    (* length : number of bytes to write *)
+
+
+(***************************)
+(* Character and String IO *)
+(***************************)
+
+PROCEDURE ReadC (f : FILE; VAR ch : CHAR) : INTEGER;
+    (* Read the next character from the file *)
+    (* f : an open file; c : variable to read next char into; *)
+    (* return value : = 0 if read OK, 1 if end of file *)
+
+PROCEDURE WriteC(f : FILE;     ch : CHAR);
+    (* Write a character to a file *)
+    (* f : an open file; c : value for next char to write; *)
+
+PROCEDURE READS (      f      : FILE;
+                 VAR   buff   : ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE READS (      f      : FILE;
+                 VAR   buff   : ARRAY @@NOCOUNT OF CHAR;
+                       length : INTEGER) : BOOLEAN;
+    (* Read a line from a file (including the newline '\n') into a string *)
+    (* f : an open file; buff : variable to read into *)
+    (* return value : true if read OK, false if end of file *)
+
+PROCEDURE WRITES(      f      : FILE;
+                 CONST buff   : ARRAY @@NOCOUNT OF CHAR);
+    (* Write a string to a file *)
+    (* f : an open file; buff : null-terminated variable to write from *)
+
+
+(****************)
+(* Formatted IO *)
+(****************)
+
+TYPE
+    Formattable = INTEGER | UNSIGNED | CHAR | BOOLEAN
+                | Enumeration | Subrange | REAL | LONGREAL
+                | ARRAY @@NOCOUNT OF CHAR;
+
+PROCEDURE READF  (      f      : FILE;
+                  CONST format : ARRAY @@NOCOUNT OF CHAR
+               {; VAR arg      : Formattable}) : INTEGER;
+PROCEDURE SREADF (CONST s      : ARRAY @@NOCOUNT OF CHAR;
+                  CONST format : ARRAY @@NOCOUNT OF CHAR
+               {; VAR arg      : Formattable}) : INTEGER;
+    (* Read a list of values from a file/string according to a format string *)
+    (* f/s : an open file/a string; format : constant string format *)
+    (* arg[n] : variable for corresponding format item, type must match *)
+    (* return value : number of values read,  < 0 for end of file *)
+
+PROCEDURE WRITEF (      f      : FILE;
+                  CONST format : ARRAY @@NOCOUNT OF CHAR
+               {; CONST arg    : Formattable});
+PROCEDURE SWRITEF(VAR   s      : ARRAY @@NOCOUNT OF CHAR;
+                  CONST format : ARRAY @@NOCOUNT OF CHAR
+               {; CONST arg    : Formattable});
+    (* Write a list of values to a file/string according to a format string *)
+    (* f/s : an open file/a string; format : constant string format *)
+    (* arg[n] : value for corresponding format item, type must match *)
+
+END IO.

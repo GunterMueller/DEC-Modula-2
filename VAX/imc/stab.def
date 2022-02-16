@@ -1,0 +1,32 @@
+(****** File: stab.def ***  Generated from ../include/stab.h ***)
+
+DEFINITION MODULE stab;
+
+  export *;
+
+
+CONST
+    N_GSYM = 20H;
+    N_FNAME = 22H;
+    N_FUN = 24H;
+    N_STSYM = 26H;
+    N_LCSYM = 28H;
+    N_RSYM = 40H;
+    N_SLINE = 44H;
+    N_SSYM = 60H;
+    N_SO = 64H;
+    N_LSYM = 80H;
+    N_SOL = 84H;
+    N_PSYM = 0A0H;
+    N_ENTRY = 0A4H;
+    N_LBRAC = 0C0H;
+    N_RBRAC = 0E0H;
+    N_BCOMM = 0E2H;
+    N_ECOMM = 0E4H;
+    N_ECOML = 0E8H;
+    N_LENG = 0FEH;
+    N_PC = 30H;
+    N_MOD2 = 50H;
+
+
+END stab.

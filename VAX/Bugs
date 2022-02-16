@@ -1,0 +1,1023 @@
+30 Apr 85	Memory is automatically imported.
+
+30 Apr 85	p2m2 should map Pascal real to M2 longreal.
+
+30 Apr 85	Better documentation on module io.
+
+30 Apr 85	-s, builtin module defs in lib, actual builtin initialization
+		don't match.
+
+30 Apr 85	Document completely Modula-2/Pascal interfacing.
+
+30 Apr 85	p2m2 doesn't put () on parameterless function calls.
+
+30 Apr 85	@size doesn't bitch if you give it something too big to fit.
+
+30 Apr 85	@size on any integer type (or subrange thereof?) does 
+		sign-extend. Dbx doesn't know about this.
+
+30 Apr 85	All output should be to error, not output?
+
+30 Apr 85	Identifier-like reserved words (in, to) used as
+		identifiers wipe out error recovery
+
+ 6 May 85	p2m2 should translate integers to reals as appropriate
+
+24 May 85	Consistency checker is stupid about not being able to
+		compile stuff in other people's directories...will recompile
+		everything in yours, then bitch that things still aren't
+		consistent.
+
+13 Jun 85	Hania's shift/reduce conflict for @size id (
+
+14 Jun 85	CARDINAL/INTEGER compatibility needs to be redone.
+		In "Mike-mode", CARDINAL should simply be a subrange of
+		INTEGER.  Else STANDARD Modula-2!
+
+ 3 Jul 85	Cannot used qualified reference to self - want for passing
+ 		in a value from an Init proc, and have idents be the same
+
+17 Jul 85	Consistency checker does not use MODPATH to find object
+		files...must be in dir you are compiling from.  Then it
+		doesn't tell you it can't find the object, it just says
+		it can't find the stuff you are importing.
+
+20 Aug 85	"Wirth-check" bug: re-define after use is allowed right now
+
+ 5 Nov 85	var array of word will take system.word(123) as param
+
+ 8 Nov 85	Do more processing when type is unknown...lots of things
+ 		give compile errors, fix all, then MORE errors next compile
+
+26 Nov 85	Dereferencing dynarrays generates EXPRSAVE when not needed
+
+10 Jan 86	P-code translator should steal Urs Amman's techniques of
+		reuse of registers.
+
+10 Jan 86	Still some places in VAX xlate for SHORTWORD improvements
+
+10 Jan 86	Put in character-specific errors.
+
+10 Jan 86	Allow local procedures as variables and params
+
+29 Jan 86	Dependency cleanups:
+		Move OrdOf out of Consts?
+		Improved gen on IN...lots can be reduced to = or >= ,etc.
+
+14 Feb 86	Redefinition of procedures error should name where coming from.
+
+14 Feb 86	p = pointer to record next : p ... end should work
+
+17 Feb 86	Add emacs "point to module name and visit file" to mod.ml
+
+20 Mar 86	Try to clean up doCheck stuff...can most be fixed via
+		setting check integer at each statement?
+
+ 7 May 86	CAP should do a table lookup, not test-and-branch.
+
+11 Jun 86	InductionExpr (at least) often has bogus time info
+
+14 Jun 86	Imports into def should not import auto into mod?
+
+17 Jun 86	Should be able to define opaque in other than impl.
+
+17 Jun 86	"Not enough params on $" (and others where name = nil)
+		should have a reasonable default.
+
+23 Jun 86	Should be different runtime errors for signed, unsigned range
+
+25 Jun 86	imc should warn about circular initializations
+
+ 1 Aug 86	Warn people to put @inline .mod dependencies in Makefiles
+
+ 6 Aug 86	Should change SaveRegs/RestoreRegs code to be at proc call
+
+ 7 Aug 86	Check out checks in inlines in general...like don't create
+		them at all in first pass, just when expansion?  Or create in 
+		first pass, and check constant ones in expansion?
+
+24 Aug 86	Put .modpath crap into mod2.0 (mod2.2 also)
+
+26 Aug 86	Put in warning when side-effect functions used in boolean
+		expressions?  Pascal only.
+
+26 Aub 86	Pascal needs set <, > for compatibility w/Berkeley
+
+ 2 Sep 86	Titan code should avoid right-shift, op, left-shift store
+
+ 4 Sep 86	io.def: ReadB lies about returning < 0 on end-of-file
+
+ 5 Sep 86	Make DISPOSE of pass-by-value prohibited.
+
+17 Sep 86	Add advise stuff, esp. use COUNTS, not boolean...
+
+17 Sep 86	If a param to inline is used only once, no need for copy
+		to be made...use result directly.
+
+23 Sep 86	IN could use ashl directly if value known to be in byte
+
+13 Oct 86	Should cvtlb be just movb?
+
+16 Oct 86	\ch in strings should only allow existing plus \' \" \\
+		all others should be an error
+
+23 Oct 86	Compare our doesUpLevel setting w/SRC compiler
+
+23 Oct 86	Fix -dividend to gen ((dividend+1) machinediv divisor + 1)
+
+28 Oct 86	EXIT REPEAT, etc., should pop out of nested loops to REPEAT
+
+29 Oct 86	FLOAT of LONGREAL should gen cvtdf, not move.
+
+29 Oct 86	ORD should return UNSIGNED if UNSIGNED or POINTER arg, else
+		INTEGER?
+
+15 Sep 86	Figure out when both depend fields are nil... error?
+
+15 Oct 86	Congruent should know about subtrees that have had Congruent
+		applied already.
+
+ 6 Nov 86	Type compatibility is far too loose...ADDRESS can be compared
+ 		to procedure, etc.
+
+10 Nov 86	Two proc types are compatible by structure, not by type
+
+12 Nov 86	lib/math.def should be redone w/inlines and "externalName"
+
+14 Nov 86	You can declare data larger than MAXINT, arrays won't work
+
+18 Nov 86	fwritef should give error when file = nil
+
+21 Nov 86	support all VAX floating point formats
+
+21 Jan 87	EVALPOINT should be allowed on arbitrary expressions
+
+21 Feb 87	DYNARRAY should allow forward type reference if possible.
+
+ 3 Mar 87	Constant subscript checks over PCSTN are done at runtime
+
+ 6 Mar 87	sal, sac need size as arg so can avoid roundup in many cases
+
+ 8 Mar 87	xlate, not mod2, should do .stab entries for registered vars
+
+ 9 Apr 87	Saving registers on JSB proc entry maybe faster if decrement
+ 		stack and index off it with MOVQ, rather than push each 
+		register
+
+16 Mar 87	Address offsets should be done in mod2, not xlate, so that
+		mod2 doesn't common subexpression static offsets
+
+16 Mar 87	Non-recursive non-process procedure data should be allocated
+		in static memory?  All exported procedures excluded?
+
+15 Apr 87	movl a, b; tstl b should have tstl removed
+
+16 Apr 87	Optimized code allocates space for temps that are in registers.
+		In many cases everything in register and could dump sp:=sp-a103
+
+16 Apr 87	Dbx changes to support subrange register vars
+
+22 Apr 87	Fetching HIGH(array) is invariant and should be candidate for
+		register.  Fetching CONST param is too.
+
+27 Apr 87	I believe internal procs can be assigned to proc vars.  Remove
+		@INTERNAL, @GLOBAL decls for procedures, @SHARED for vars.
+
+11 May 87	/usr/def should be in default search path
+
+13 May 87	Should record which fields in a record are used for imc?
+		Would save a lot a recompilation changing type of global field.
+
+14 May 87	imc should skip over C files rather than look at all .stabs
+
+14 May 87	dynarray refs in inline procs don't set optim fields correctly
+
+ 1 Jun 87	Integer/Unsigned checking needs to be in RETURN, etc.
+
+16 Jun 87	acos, etc. not in math libraries
+
+ 5 Jul 87	runtime__setin can be dumped from Titan runtime
+
+ 7 Jul 87	Can't print out argv from dbx
+
+ 7 Jul 87	VMS use of r2..5 in JSB procedures doesn't work
+
+ 7 Jul 87	Can I remap r6..r11 down into whatever of r0..r5 isn't
+ 		used on leaf procedures?  Win on Ultrix.
+
+10 Jul 87	Set code is bit-level, not word-level on copy, but probably
+		word-level on binary ops
+
+10 Jul 87	Variant-checking code is too large, esp. to test tag = 0
+
+16 Jul 87	Use movc3 for long (loop only) copies
+
+22 Jul 87	Automatic recompiling with the compiler doesn't take into
+		account Makefiles that compile some files specially (like
+		no -C)
+
+24 Jul 87	Try using "movab const(rx),ry" rather than "addl3 $const,rx,ry"
+
+28 Jul 87	Inline functions should return directly into var on left of
+		assignment if possible.  Or at least make it into r0?
+
+28 Jul 87	Inlines should avoid generating a jump to the end if last
+		statement is return.
+
+28 Jul 87	Contrary to Mike's and other's statements, the Unix assembler
+		does not get rid of jumps to jumps.
+
+29 Jul 87	Don't generate jump code after RETURN statement (when in
+		if..elsif..elsif.. chain mostly)
+
+31 Jul 87	Should always return non-nil Expr from Check, (EXPRBAD, ANYTYPE)
+
+31 Jul 87	doneg, donot should not load then negate.
+
+10 Aug 87	Can't pass slices to standard procedures.
+
+25 Mar 88	TwoOrThree should see if src, dest same and operator
+		commutative to avoid addl3 x,x,y
+
+ 1 Apr 88	Runtime "no return" message should print procedure name
+
+ 8 Apr 88	Induction variables should use a more classic scheme, in
+ 		which there can be several induction variables per loop.
+		If multiplication of the index is involved, the index must
+		be kept separate from the derived induction variable.
+
+27 Apr 88	-m flag needs to know HOW to make modules, not just what flags
+		to use.  I want to say -m"make $.o" so special processing on
+		Scanner.mod happens
+
+27 Apr 88	Titan needs GenCheckExpr finished: CHECKSUBARRAY
+
+28 Apr 88	Modula-2 storage allocator is slow.  Try my new one.
+
+17 Nov 89	Dynamic set constructors are broke on both Titan and VAX.  They
+		don't always or in the singleton or range.
+
+17 Nov 89	Alignment restriction is screwed up by allocating 32-bit
+		checkword at beginning of dynamic storage.
+
+15 May 90	It would be nice to have FROM ... IMPORT QUALIFIED ...;
+
+16 May 90	INCL and EXCL require sets to be byte-aligned, but should work
+		for bit-aligned sets as well
+
+16 May 90	Enums on VAX should take 8 or 16 bits if small enough.
+
+31 May 90	ARRAY OF WORD, BYTE, should ensure alignment divisible by 32
+		or 8, and maybe size also divisible by 32 or 8?
+
+
+Fixed
+-----
+
+16 Apr 85	Unclosed comment at eof now says where the comment was opened.
+
+24 Apr 85	@size @align usable for set base types, array index types.
+
+29 Apr 85	Missing , or ident in IdentList doesn't crash
+
+30 Apr 85	All undef ids except in import/export lists entered in
+		undefinedScope
+
+30 Apr 85	^ error indicator now points to start of token
+
+30 Apr 85	Missing ; on export list saves yychar, restores
+
+ 1 May 85	--------------- WSL release
+
+10 May 85	MODPATH takes , as separator
+
+13 May 85	Case label value occurs more than once doesn't happen on
+		undefined identifiers
+
+18 May 85	-s exportAll just exports what should be, not proc's vars too
+
+20 May 85	Vars with undefined type don't generate errors when you
+		use the variable
+
+22 May 85	Better checking writef/readf format strings when errors
+
+23 May 85	Better recovery from missing ends
+
+23 May 85	--------------- WSL release
+
+12 Jun 85	/usr/local/lib/mod always part of automatic searchpath
+
+24 Jun 85	Doesn't get so confused on missing commas in sets, cases
+
+ 3 Jul 85	Doesn't get so confused on many bad expressions
+
+ 3 Jul 85	Proc compatibility use VAR, value, CONST, not just type!
+
+ 6 Jul 85	Conditional compilation added
+
+ 7 Jul 85	Invalid expr on case selector is compatible with all cases
+
+ 9 Jul 85	--------------- WSL release
+
+18 Jul 85	Preprocessor allows $if around import of def that has $ifs
+
+31 Jul 95	DTANY okay for set base type, array index type
+
+31 Jul 85	mod2.1 converted to Modula-2, runs in 75% time of Pascal version
+
+ 8 Aug 85	imc allows identifiers to start with _
+
+19 Aug 85	Record variants used in NEW, DISPOSE, TSIZE, TBYTESIZE
+
+25 Aug 85	--------------- WSL release
+
+ 6 Sep 85	high/first/last(a,n) gets nth dimension, not 1st
+
+18 Sep 85	begin end functionName doesn't complain about no return -
+		assumes stub you will fill in later
+
+19 Sep 85	passing x to array of x works if x is byte/word, else
+		gives error message rather than bad code
+
+ 1 Oct 85	Dynamic set constructors finally work..changes in runtime.c
+
+ 1 Oct 85	module id, var id where id already defined doesn't dump core
+
+ 1 Oct 85	SYMANY nodes (inserted by error handling) allow redefinition
+
+ 1 Nov 85	Mike's changes as of 17 October 1985 incorporated
+
+ 5 Nov 85	pass-by-value array @nocount is not allowed
+
+ 5 Nov 85	Better support for 16-bit words in xlate
+
+ 6 Nov 85	empty then part reverses then/else
+
+ 6 Nov 85	--------------- WSL release (Pascal and Modula-2)
+
+ 7 Nov 85	Undefined types used in def proc heading match actual type
+ 		in impl proc definition
+
+ 7 Nov 85	Redef of proc in implementation uses the redef version
+
+ 7 Nov 85	@nocount can only be passed to another @nocount
+
+13 Nov 85	$C+,-,^ in comments for checking on, off, pop to previous
+
+13 Nov 85	Constant range-checks done in first pass, give error
+
+15 Nov 85	expressionError return ExprNode(EXPRBAD) so SameExprLine works
+
+18 Nov 85	Okay to pass dynamic set expr to value parameter
+
+18 Nov 85	Enum type name table is not .globl anymore (Pascal)
+
+18 Nov 85	Write, read on binary files implemented (Pascal)
+
+19 Nov 85	Some pointers (WITH, e.g.) can be @NOCHECK (Pascal)
+
+20 Nov 85	FOR loops do range-checking on bounds
+
+22 Nov 85	Constant character comparisons are allowed
+
+22 Nov 85	Constant true asserts don't appear in code
+
+23 Nov 85	Modula-2 support for setjmp and longjmp
+
+26 Nov 85	EXPRSAVE and EXPRINLINEs don't overlap temps anymore
+
+26 Nov 85	INC and DEC work on non-aligned objects
+
+27 Nov 85	Undefined ids on import/export are entered in symbols table
+
+27 Nov 85	--------------- WSL release (Pascal and Modula-2)
+
+ 3 Dec 85	Selection ^ . [] () of type-transfers are allowed
+
+ 3 Dec 85	All constant ASSERTs are checked at compile time
+
+ 6 Dec 85	Selection ^ . [] () of function result allowed
+
+ 9 Dec 85	Slices of @nocount can be passed to count value array params
+
+10 Dec 85	UNQUALIFIED keyword extension removed
+
+11 Dec 85	- and + properly bound to term, not factor
+
+ 7 Jan 85	Pascal assert can take a string as 2nd parameter, b output
+		file buffering option, opens header files w/DEFNAME
+
+ 7 Jan 85	CHR and VAL are range-checked.
+
+ 8 Jan 85	Pascal DFDISPOSE called; file VAL and assignment disallowed
+
+ 9 Jan 85	String comparisons generate correct code on VAX
+
+13 Jan 85	VAL procedure goes thru optimizer okay now
+
+14 Jan 85	Fixed otree to pass the parent expression to OptBuiltin
+
+14 Jan 85	ORD(constant) literally returns a constant
+
+15 Jan 85	set congruency tests are fixed in optimizer
+
+15 Jan 85	Non-executing constant bound for loop gives error
+
+22 Jan 85	--------------- WSL release (Pascal and Modula-2)
+
+22 Jan 85	EXPORT errors in def module are now reported in def file
+
+22 Jan 85	Ident at end of def for implementation module is checked
+
+22 Jan 85	xlate bug on deeply nested longreal expressions fixed
+
+24 Jan 86	Import errors show correct file when inlines in def
+
+26 Jan 86	Pascal text file reads of subranges allowed
+
+26 Jan 86	Small real constants aren't turned into 0.0!
+
+27 Jan 86	Much Pascal formatted output fixed; '#' ok in Modula-2 writef.
+
+ 3 Feb 86	Default NEW, DISPOSE of @pascal pointers get size in bytes
+
+ 6 Feb 86	Type-transfer of dynamic array descriptor works.
+
+10 Feb 86	Titan code generation calls NEW for Pascal pointers.
+
+13 Feb 86	Mike changes as of 13 Feb 86 incorporated
+		(intermodule checker works well now)
+
+14 Feb 86	Strings compares work when size <= WORDSIZE
+
+14 Feb 86	Constant string comparisons work
+
+15 Feb 86	%n in writef for enumerated type names
+
+18 Feb 86	Titan code gen for boolean := longreal relop longreal works
+
+19 Feb 86	Titan code for INCL, EXCL @size,@align sets works
+
+21 Feb 86	All EXPORTs from definitions are QUALIFIED
+
+22 Feb 86	dbx is happy with Pascal stab entries.
+
+24 Feb 86	Optimizer seems to work with Pascal
+
+24 Feb 86	Modula puts out "name:c=n;" stab entry for const name = nil
+
+25 Feb 86	--------------------------- WSL/Rice release
+
+27 Feb 86	All GenInteger/I output changed from longreal to integer.
+
+ 7 Mar 86	Sizes of array of char fixed for Titan
+
+ 7 Mar 86	--------------------------- WSL release
+
+20 Mar 86	Pascal read/write completely rewritten; all known problems
+		fixed
+
+ 3 Apr 86	Various Titan generation bugs fixed
+
+ 1 Apr 86	Speed improvements in Mahler.mod, PCode.mod
+
+ 5 Apr 86	Extra, missing comma in enum list handled nicely now
+
+11 Apr 86	Modula-2 compiler released on Titans
+
+17 Apr 86	Pascal compiler for Titans released on VAXes.
+
+23 Apr 86	Pascal compiler release on Titans
+
+23 Apr 86	Code file is opened during initialization
+
+23 Apr 86	Constant ASSERTs run-time again; okay for ASSERT(FALSE) to
+		be last statement in a function.
+
+26 Apr 86	$ELSE, $ELSIF, $END must be in same file as $IF
+
+ 5 May 86	Enumerated constants can be exported
+
+ 6 May 86	INC, DEC on first field of record (Titan) works
+
+ 8 May 86	Timestamps get right value from file status
+
+ 8 May 86	EOF handling finally gives error messages in correct file,
+ 		junk after . in def module is flagged
+
+ 4 Jun 86	Constant evaluation of expression w/inline CONST params
+
+ 5 Jun 86	Set constructors okay in inline procedures
+
+ 6 Jun 86	Optimized inlines for const rangechecks
+
+11 Jun 86	EXPRSYM ok in Optim:CopyExpr
+
+11 Jun 86	Titan address-inducted for loop increment divided by wordsize
+
+11 Jun 86	InductionExpr properly Marks synthesized expressions
+
+13 Jun 86	--------------------------- WSL/WRL Release
+
+19 Jun 86	Unexpected eof works again; empty file does not crash compiler
+
+19 Jun 86	stab entry for Pascal files is correct again
+
+19 Jun 86	Titan string compares use ->, no longer ->>
+
+24 Jun 86	Set + on value and CONST parameters works
+
+25 Jun 86	Intermodule checker tries not to compile importers that were
+		compiled "recently" when the problem may lie in the exporter.
+
+10 Jul 86	Constant FIRST, LAST(enum) work.
+
+15 Jul 86	while readf()... now works on Titan
+
+23 Jul 86	p2m2 gives translate error on external declaration in .p file
+
+23 Jul 86	p2m2 finally handles forward declarations
+
+23 Jul 86	p2m2 -p switch puts @pascal on pointers; @external on .h procs
+
+23 Jul 86	case kind : @size @align TypeName is allowed
+
+24 Jul 86	Dereferencing dynarray functions works
+
+24 Jul 86	Generates stab entries for Pascal input, output
+
+24 Jul 86	EVAL modes removed from time optimizations
+
+25 Jul 86	Undefined procs, funcs do EVALGET on each parameter
+
+25 Jul 86	No error on for loop limits for index of undefined type
+
+25 Jul 86	Number, First, Last check dimension # type
+
+25 Jul 86	Passing unknown type var to array of params doesn't complain
+
+26 Jul 86	Type-transfer dereferencing works.
+
+26 Jul 86	@size > 32 on scalars is not allowed
+
+26 Jul 86	Multi-word ops do straight-line code if small operands
+
+27 Jul 86	'''', """" don't confuse parser when -ss (standardStringFlag)
+
+28 Jul 86	Inline constants for loop bounds set forWillExecute, do all
+		range-checking at expansion time.
+
+28 Jul 86	Range and recursion errors in inlines show inline call chain
+
+28 Jul 86	DTREAL (type given to literals) and DTLONGREAL can be mixed in 
+		const expressions (not as tight as a DTEITHERREAL type would).
+
+29 Jul 86	EVALPOINT works on one-word functions
+
+29 Jul 86	Constant sets for Titan dbx fixed
+
+29 Jul 86	--------------------------- WSL/WRL Release
+
+30 Jul 86	Type transfer okay on left side assign, var arguments
+
+ 1 Aug 86	mod2.ml decides capitalization on per-buffer basis
+
+ 3 Aug 86	longreal address arithmetic changed to 32-bit integers
+
+ 3 Aug 86	subExpr stuff simplified, names widthExpr and decimalExpr
+
+ 3 Aug 86	mod2.ml decides indentation on per-buffer basis
+
+ 4 Aug 86	bitand, bitor, bitxor swap operands as useful; use TwoOrThree
+
+ 4 Aug 86	TwoOrThree recognizes when storing back into dest var
+
+ 4 Aug 86	p-codes uni, int, sdf swap operands as useful
+
+ 4 Aug 86	p-code translator gives error when can't open output file
+
+ 5 Aug 86	@nocount in dynarray NEWs handled correctly
+
+ 5 Aug 86	Multi-dimension dynarrays allocated correctly on Titan
+
+ 5 Aug 86	@nocount in dynarray DISPOSEs handled correctly
+
+ 7 Aug 86	dynarray of char^ := string works on VAX
+
+11 Aug 86	dynarray of char^ := string works on Titan (if len mod 4 = 0)
+
+11 Aug 86	Store calls MultiWordBinOp, does small operands straight-line
+
+12 Aug 86	Calls to TRegOpnd don't gen op3 reg1,reg2,reg2 anymore
+
+12 Aug 86	MIN, MAX, ABS, SQR work for subranges on Titan now
+
+12 Aug 86	16-bit integer support added to Titan code generation
+
+13 Aug 86	Compares do straight-line for small operands on VAX
+
+13 Aug 86	Lone *) gets scanner error message, doesn't mess up parsing
+
+13 Aug 86	Small char array stores into packed recs work on Titan
+
+24 Aug 86	BITAND, etc. return param 1 type
+
+24 Aug 86	non-zero status no longer leaves /tmp/blah.pcd, .s files
+
+24 Aug 86	Better error message on non-compatible proc types
+
+28 Aug 86	Array assigns of non-integer # of words works on Titan
+		(in particular, string to dynarray assign works now)
+
+28 Aug 86	PCSAV has 'd' option, no need for PCSAV/PCUSE to pop stack
+
+28 Aug 86	MAXINT is once again intcard, not strictly integer
+
+29 Aug 86	Modules nested in @noinit module cannot have initialization
+
+29 Aug 86	Open arrays cannot be assigned to one another
+
+31 Aug 86	1.0e307 allowed on Titan
+
+31 Aug 86	Number parsing errors fixed and cleaned up
+
+31 Aug 86	@nocount cannot be element of count, OpenSubscript doesn't die
+
+31 Aug 86	Same type, different size arg to VAR gives better message
+
+ 2 Sep 86	Scanning for \n in ReadLine removed (1.5% speedup of mod2)
+
+ 2 Sep 86	Loads of < 32 bit arrays work on Titan
+
+ 3 Sep 86	Optimizer doesn't invalidate many locals on procedure calls
+		(6% size decrease in mod2 code, 1.3% on xlate)
+
+ 4 Sep 86	Single-word IN's sped up by constructing singleton
+
+23 Sep 86	io.ReadB correctly optimized
+
+25 Sep 86	io.ReadS implemented; Scanner calls it instead of ReadLine
+
+25 Sep 86	Optimizer doesn't bother with impls of @inline defs
+
+26 Sep 86	Optimizer uses quite a bit less space.
+
+ 9 Oct 86	Writef only puts out 'l' on 'x', 'o', 'd', and 'u'.
+
+17 Oct 86	Types cannot be redefined (except opaque and rename)
+
+19 Oct 86	Errors for subrange limits too large or small improved
+
+22 Oct 86	NOT expressions removed from CSE consideration
+
+23 Oct 86	Congruent EXPRVAL with different dependPtrVar returns false
+
+ 3 Nov 86	Registerize doesn't generate bogus code on NULLREG
+
+10 Nov 86	NIL relop NIL allowed
+
+19 Nov 86	--------------------------- WSL/WRL/tape Release
+
+21 Jan 86	EVALPOINT allowed on arbitrary constant expressions
+
+31 Jan 86	Byte-addressed Titan Modula-2 release
+
+19 Feb 86	Byte-addressed Titan Pascal release
+
+21 Feb 86	INCL/EXCL on first field of record works on Titan
+
+21 Feb 87	DYNARRAY @NOCOUNT @NOCHECK ok
+
+21 Feb 87	Better error message on redefining procedure in def module
+
+22 Feb 87	open arrays work in inline procedure headings
+
+22 Feb 87	integer <-> cardinal assignments/parameters range-checked
+
+22 Feb 87	null strings work when standardStringFlag is on
+
+22 Feb 87	Type-transfer works better on EVALPOINT,PUT stuff
+
+22 Feb 87	SIZEOF(open array) allowed
+
+ 3 Mar 87	Compiled definition modules added (3% gain compiling compiler)
+
+ 3 Mar 87	Word-addressed Titan code removed
+
+ 4 Mar 87	SIZE, TSIZE, NEW, DISPOSE use size in addressing units
+
+ 4 Mar 87	Address arithmetic and INC/DEC(address) work correctly
+
+ 5 Mar 87	@pascal pointers removed, all straight Modula-2 pointers
+		(.d files, no -C on Scanner.mod, and @pascal removal 9% gain)
+
+ 6 Mar 87	INC/DEC(@size 8 or 16) work now
+
+ 6 Mar 87	sav c, sav t pcode ops separated, so better code on NEW
+
+ 6 Mar 87	sal pcode improved, fixed for constant size case
+
+13 Mar 87	-D option instead of -x for conditional compilation
+
+13 Apr 87	For loop termination code now optimized for MicroVAX II
+
+13 Apr 87	VAR string param to '%s' in ReadF generates correct code
+
+13 Apr 87	WriteB takes a CONST, not VAR parameter
+
+13 Apr 87	Inline code generation on Titan works (but not open arrays)
+
+15 Apr 87	FOR loop code improved
+
+16 Apr 87	CASE statement in inline procedure works
+
+16 Apr 87	VAX version puts out register symbols for dbx
+
+ 6 May 87	Titan imc works
+
+11 May 87	Imc just warns about no .o file for imported procedures
+
+12 May 87	-t and -tb mean Titan byte code
+
+13 May 87	Inline expansion of EXPRCONST fills in ALL fields: GenT no
+		longer generates huge strings for constant char params
+
+13 May 87	Inline RETURN does proper optimization on inlineResult
+
+14 May 87	imc gets correct defTime if x.o implements y.def
+
+26 May 87	Titan inline vars, params are declared local
+
+27 May 87	Titan inline array of sizes are declared local
+
+29 May 87	--------------------------- WSL/WRL Release
+
+ 1 Jun 87	Binary expressions w/EXPRSAVE never reorder improperly
+
+ 1 Jun 87	Can pass ARRAY OF CHAR to Pascal argv routine again
+
+ 5 Jun 87	: instead of = in type declaration gives nice error
+
+ 6 Jun 87	= instead of := in assignment gives nice error
+
+ 6 Jun 87	constant boolop expression evals to constant or expression
+
+ 6 Jun 87	Titan for loop w/UNSIGNED index gens unsigned compares
+
+16 Jun 87	forIncVar, forLimitVar allocated in optimizer if needed there
+
+17 Jun 87	InductionExpr correctly handles constant range-checks
+
+18 Jun 87	Preprocessor syntax extended; command line overrides $const;
+		set type and operations added
+
+ 2 Jul 87	--------------------------- WSL/WRL/tape Release
+
+ 5 Jul 87	Enumerated name table declared private, doesn't use file name
+		REQUIRES change to p-code translator "I" rather than "i"
+
+ 6 Jul 87	Put in code for Titan multi-word dynamic set constructors
+
+ 6 Jul 87	Pascal correctly uses value param strings passed to writeln
+
+ 6 Jul 87	Pascal subranges, enums take up 32 bits in records and arrays
+
+ 6 Jul 87	Pascal correctly uses value param strings passed to reset/write
+
+ 6 Jul 87	@INTERNAL removed from language
+
+ 7 Jul 87	VMS use of r2..r5 fixed for CALLS procedures
+
+ 8 Jul 87	MultiWordBinOp always use offset(rx), not slower (rx)+
+
+ 9 Jul 87	Error for NUMBER of @NOCOUNT improved, LOW(@NOCOUNT) returns 0
+
+ 9 Jul 87	"Cannot find file $ for imported module" doesn't dump core
+
+ 9 Jul 87	MultiWordBinOp uses movq, don't load registers needlessly
+
+14 Jul 87	Number of scopes not limited to 1000
+
+14 Jul 87	Titan inlines called when temporaries already allocated works
+
+14 Jul 87	--------------------------- WSL/WRL Release
+
+16 Jul 87	MultiWordBinOp generates better loop for large constant size
+
+17 Jul 87	Unreachable code warnings for EXIT, RETURN, GOTO
+
+17 Jul 87	Pascal compiler accepts '-Idirectory' option
+
+17 Jul 87	Modula-2 accepts spaces between dirs in .modpath file
+
+21 Jul 87	SUBARRAY can never be declared @NOCOUNT
+
+21 Jul 87	Can't pass SUBARRAY to anything but SUBARRAY
+
+22 Jul 87	Multi-word function results that are immediately assigned don't
+		do extra copy to a temporary on VAX.
+
+23 Jul 87	prep program to do preprocessing.
+
+23 Jul 87	@NOINIT can't import non-NOINIT; doesn't generate init body
+
+24 Jul 87	DO/THEN mistakes generate nice error
+
+24 Jul 87	Titan -G switch makes sure 0c after procedure name.
+
+30 Jul 87	Titan Pascal makes sure 0c after writeln formatting strings
+
+30 Jul 87	Invalid address message prints out address value now
+
+30 Jul 87	Pascal has "terminal" textfile predeclared
+
+31 Jul 87	Fixed-size array subscripts keep processing when errors
+
+31 Jul 87	Fixed-size array subscripts not offset/scaled if -C
+
+ 1 Aug 87	Can index into open array of @sized fixed-sized array
+
+ 6 Aug 87	Open arrays use EXPRDESCRIPTOR rather than special code
+
+12 Feb 88	-Cp generates pointer assignment checks (Titan only)
+
+14 Feb 88	Open array arguments can have total dimension size be
+		different from elements * element size.  (Which means that
+		imc on Titan can correctly recompile modules.)
+
+ 9 Mar 88	EXPRDESCRIPTORS ineligible for subexpressions
+
+24 Mar 88	Pascal write(str:rec.int) pays attention to rec.int
+
+25 Mar 88	PCIND, PCSTO don't generate ignored 3rd parameter
+
+25 Mar 88	modlib Makefile just copies out-of-date files, not all files
+
+25 Mar 88	Empty function body complains about no return statement
+
+25 Mar 88	BitShiftLeft, BitShiftRight rangecheck for [0..31]
+		BitExtract, BitInsert check for offset [0..31], size [1..32]
+
+25 Mar 88	mod doesn't reference NIL pointer if no extension on file name
+
+25 Mar 88	optimizer doesn't NIL reference on empty CASE statement
+
+25 Mar 88	Inlines can handle EXPRBAD now
+
+25 Mar 88	Titan generates code for procedure comparisons
+
+25 Mar 88	OK to pass real constant to WORD (if realsize <= 32)
+
+28 Mar 88	Compiler doesn't crash on SWritef(s, "")
+
+28 Mar 88	FIRST, LAST work on defined opaque types
+
+28 Mar 88	Type-transfer fills in baseVar, basePtrType for optimizer
+
+28 Mar 88	Unexecuted FOR loops generate warning rather than an error
+
+29 Mar 88	Inline functions return multiword values properly on VAX
+
+29 Mar 88	HIGH, LOW, NUMBER don't die if dimension too large
+
+29 Mar 88	Using ': =' acts like ':=' with error message
+
+29 Mar 88	CHR returns a constant if passed a constant
+
+ 1 Apr 88	Single-character constant OK for char array initializer
+
+ 1 Apr 88	SAC doesn't shuffle sp into another register
+
+ 4 Apr 88	Compiler complains if try to assign a row of a dynamic array
+
+ 4 Apr 88	p-code RET avoids shuffling registers for multiword result
+
+ 4 Apr 88	Writes w/@size or @align use BaseType
+
+ 4 Apr 88	"unix" and "vms" are predefined, overrideable constants
+
+ 4 Apr 88	DYNARRAY compare just looks at first word (data pointer)
+
+ 5 Apr 88	Non-word aligned pass-by-value open arrays work on Titan
+
+ 6 Apr 88	Proper variant used for record initial values in GenPC
+
+ 6 Apr 88	Longreal initializers work on VAX
+
+ 7 Apr 88	External name specifiers work for variables and procedures
+
+ 8 Apr 88	Non-constant multiplication removed from induction expressions
+
+ 8 Apr 88	DESCRIPTOR builtin finally implemented
+
+ 9 Apr 88	Tail recursion avoids "p1 := p1" if p1 has CHECKEXPR
+		CASE ELSE gets tail recursion consideration
+		Avoids "p1 := p1" if p1 is VAR parameter
+
+ 9 Apr 88	returnSeen local to function so works with INLINE procedures
+
+11 Apr 88	AssignableConst doesn't NIL reference if NIL parameter
+
+11 Apr 88	imc only reports "Could not correct inconsistency" when it can't
+		imc keeps -W always -W, so can't infinitely oscillate
+
+11 Apr 88	DEF/IMP parameter names must match exactly even with -s flag
+
+11 Apr 88	doesUpLevel propagated to ALL enclosing procedures, not just
+		the immediate parent
+
+11 Apr 88	Parser doesn't choke if use , between formal procedure params
+
+11 Apr 88	Optimizer more (read "too") pessimistic about moving "invariant"
+		pointer expressions out of loops
+
+13 Apr 88	assignOp checks that righthand EXPRVAL same size as lefthand var
+
+14 Apr 88	value ARRAY OF strips off leading @size @align
+
+18 Apr 88	HIGH, LOW, NUMBER work on @size @align arrays
+
+18 Apr 88	arrays obey @align on their element types
+
+18 Apr 88	Titan handles non-word-aligned non-ARRAY OF value params
+
+18 Apr 88	Titan handles byte-aligned and byte-multiple assignments
+
+18 Apr 88	Titan demands reference parameter have finer alignment than
+		the arguement's alignment
+
+19 Apr 88	abs(constant) generates good code on VAX and Titan
+
+23 Apr 88	-a flag reliably and nicely reports non-used imports
+
+25 Apr 88	Titan generates checkword stuff...no longer needed in ALLOCATE
+
+25 Apr 88	VAX and Titan handle user ALLOCATEs that return NIL
+
+27 Apr 88	VAX handles dereferenced counted DYNARRAY functions
+
+27 Apr 88	Titan handles selected ARRAY and RECORD functions
+
+28 Apr 88	--------------------------- WSL/WRL Release
+
+29 Apr 88	Bug in DISPOSE w/elementSize vs size fixed
+
+ 3 May 88	chr(constant number) works in set constructors
+
+ 3 May 88	EXPRSAVE marks the save variable in the optimizer
+
+ 3 May 88	Non-checked EXPRCHECKs inherit cost from their child
+
+ 4 May 88	Constant selector in inline CASE statement does direct code
+
+ 4 May 88	Range, no case selector compile-time messages use actual value,
+ 		not OrdOf underlying numeric representation
+
+ 4 May 88	Indexing of open array with undeclared index doesn't complain
+
+ 5 May 88	MEMFAST variable typecast to record or array then selected is
+ 		marked unsuitable for putting in a register
+
+ 6 May 88	--------------------------- WSL/WRL Release
+
+ 8 May 88	Variant checking implemented on Titans
+
+16 May 88	Variant checking gets better common subexpression handling
+	
+19 May 88	Titan INLINE procedures Simplify all arguments
+
+23 Oct 88	Titan INLINE procedures can return undefined opaques <= 32 bits
+
+24 Oct 88	INLINE proc error if declared in .def but not defined in .mod
+
+24 Oct 88	Recursive INLINE procs don't infinite recurse error message!
+
+26 May 89	You can return NIL for a dynamic array function on the Titan now
+
+31 May 89	Range checks on open and dynamic arrays check < 0 on Titan
+
+12 Jun 89	ARRAY OF BOOLEAN accepts fixed BOOLEAN arrays on VAX.  Also
+		packs BOOLEAN arrays to 8 bits on Titan.   RECOMPILE needed!!!
+
+14 Jun 89	mod.c passes in modlib to intermodule checker
+
+14 Jun 89	mod.c passes in mod argv[0] to intermodule checker
+
+15 Jun 89	Titan multiword functions were allocating too much space
+
+15 Jun 89	VAX NEW,DISPOSE dynarrays were allocating too much space
+
+15 May 90	Procedure constants can be compared for = and #
+
+15 May 90	Unary - on UNSIGNED gives warning, should really give error
+
+15 May 90	Multiple EXPORTs not allowed; if no export list at all in
+		definition module, then exportAll := True
+
+16 May 90	FLOAT and LONGFLOAT range-check conversion from UNSIGNED
+
+16 May 90	INC and DEC disallowed on non-contiguous enumerations
+
+16 May 90	Optimizer now pays attention to arrVar and checkVar, so it
+		doesn't accidentally use before def when dynarray checking
+

@@ -1,0 +1,46 @@
+(* $Header: bitoperations.def,v 1.10 88/04/28 11:06:45 joel WSL/WRL/Release $ *)
+This module should not be compiled, but is supplied for documentation purposes.
+definition module bitoperations;
+(* This is a dummy definition module to indicate what is in the built-in *)
+(* bitoperations module.  Note that case is ignored in built-in identifiers *)
+
+from system import BITSPERWORD;
+
+export qualified BitNot, BitAnd, BitOr, BitXor, BitShiftLeft, BitShiftRight,
+		    BitInsert, BitExtract;
+
+(* Bits are numbered from 0 on the right in Extract and Insert *)
+
+type
+    FieldOffset = [0..BITSPERWORD-1];
+    FieldSize = [1..BITSPERWORD];
+
+procedure BitNot(a : integer) : integer;
+    (* returns bit-by-bit not of a *)
+
+procedure BitAnd(a, b : integer) : integer;
+    (* returns bit-by-bit and of a and b *)
+
+procedure BitOr(a, b : integer) : integer;
+    (* returns bit-by-bit or of a and b *)
+
+procedure BitXor(a, b : integer) : integer;
+    (* returns bit-by-bit exclusive or of a and b *)
+
+procedure BitShiftLeft(a : integer; n : FieldOffset) : integer;
+    (* returns a (logically) shifted left n bits *)
+
+procedure BitShiftRight(a : integer; n : FieldOffset) : integer;
+    (* returns a (logically) shifted right n (>=0) bits *)
+
+procedure BitExtract(word : integer; offset : FieldOffset; size : FieldSize)
+		    : integer;
+    (* returns the field of size bits starting at bit offset of word *)
+    (* field is returned right-justified and zero filled *)
+
+procedure BitInsert(field : integer; offset : FieldOffset; size : FieldSize;
+		word : integer) : integer;
+    (* returns word with rightmost size bits of field inserted starting *)
+    (* at bit offset *)
+
+end bitoperations.

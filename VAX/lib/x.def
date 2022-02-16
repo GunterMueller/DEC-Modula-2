@@ -1,0 +1,2622 @@
+(* M. Chow - February 15, 1987 *)
+(* M. Chow - June 26, 1987 Upgrade to Beta FieldTest release *)
+(* R. McNamara - October 13, 1988 Upgrade to release 3 *)
+
+DEFINITION MODULE x;
+
+EXPORT *;
+ 
+ 
+CONST
+    X_PROTOCOL = 11;
+    X_PROTOCOL_REVISION = 65533;
+ 
+    True = 1;
+    False = 0;
+    None = 0;
+    ParentRelative = 1;
+    PointerWindow = 0;
+    InputFocus = 1;
+    PointerRoot = 1;
+    AnyPropertyType = 0;
+    AnyKey = 0;
+    AllTemporary = 0;
+    CurrentTime = 0;
+    NoSymbol = 0;
+    FirstExtensionError = 128;
+    LastExtensionError = 255;
+    UnmapGravity = 0;
+    GCLastBit = 22;
+    FontChange = 255;
+ (* constants needed copied from Xatom.h - may change *)
+    XA_WM_NORMAL_HINTS = 40;
+ 
+ 
+TYPE
+    XID;
+    Drawable;
+    Pixmap = Drawable;
+    Window = Drawable;
+    Font;
+    Cursor;
+    Colormap;
+    GContext;
+    XContext;
+    KeySym;
+    Device;
+    Mask = UNSIGNED;
+    Atom = UNSIGNED;
+    VisualID;
+    Time = UNSIGNED;
+    KeyCode = UNSIGNED;
+    Infinite = [0..1000000];
+ 
+ 
+ 
+TYPE
+  Short = @SIZE 16 @ALIGN 16 INTEGER; (* [0..0FFFFH] *)
+  Long =  @SIZE 32 @ALIGN 32 INTEGER;
+  ShortUnsigned = @SIZE 16 @ALIGN 16 UNSIGNED;
+  ShortBoolean = @SIZE 16 @ALIGN 16 BOOLEAN;
+  LongBoolean = @SIZE 32 @ALIGN 32 BOOLEAN;
+  ShortArray = ARRAY Infinite OF Short;
+  ShortArrayPtr = POINTER @NOCHECK TO ShortArray;
+  CharArray = ARRAY Infinite OF CHAR;
+  CharArrayPtr = POINTER @NOCHECK TO CharArray;
+  BitmapData = ARRAY @NOCOUNT OF Short;
+  PlaneMask = INTEGER;
+  XrmAtom = CharArrayPtr;
+  XrmQuark = INTEGER;
+  XrmQuarkList = DYNARRAY @NOCHECK @NOCOUNT OF XrmQuark;
+  XrmName = XrmQuark;
+  XrmNameList = XrmQuarkList;
+  XrmClass = XrmQuark;
+  XrmClassList = XrmQuarkList;
+  XrmRepresentation = XrmQuark;
+  XrmHashBucket;
+  XrmHashTable;
+  XrmSearchList;
+  XrmResourceDataBase;
+  Longs = DYNARRAY @NOCHECK @NOCOUNT OF Long;
+  Status = INTEGER;
+  IntProc = PROCEDURE (): INTEGER; 
+ 
+ (* Pointers *)
+ 
+  KeySymPtr = POINTER @NOCHECK TO KeySym;
+  DisplayPtr = POINTER @NOCHECK TO Display;
+  QEventPtr = POINTER @NOCHECK TO XQEvent;
+  ScreenFormatPtr = POINTER @NOCHECK TO ScreenFormat;
+  XCharStructPtr = POINTER @NOCHECK TO XCharStruct;
+  ExtDataPtr = POINTER @NOCHECK TO XExtData;
+  XExtensionPtr;
+  XFontPropPtr = POINTER @NOCHECK TO XFontProp;
+  XModifierKeysPtr = POINTER @NOCHECK TO XModifierKeys;
+  XVisualInfoPtr = POINTER @NOCHECK TO XVisualInfo;
+  VisualPtr = POINTER @NOCHECK TO Visual;
+  GC = POINTER @NOCHECK TO XGC;
+  INTEGERPtr = POINTER @NOCHECK TO INTEGER;
+  WindowPtr = POINTER @NOCHECK TO Window;
+  XFontPtr = POINTER @NOCHECK TO XFontStruct;
+  XImagePtr = POINTER @NOCHECK TO XImage;
+  ColormapPtr = POINTER @NOCHECK TO POINTER @NOCHECK TO Colormap;
+  XTimeCoordPtr = POINTER @NOCHECK TO XTimeCoord;
+  XAssocTablePtr = POINTER @NOCHECK TO XAssocTable;
+  XGCValuePtr = POINTER @NOCHECK TO XGCValues;
+ 
+ 
+ (* Enumerated Types and Sets for Masks *)
+ 
+   WindowclassMask = (CopyFromParent, InputOutput, InputOnly);
+ 
+   MapWAMask = (IsUnmapped, IsUnviewable, IsViewable);
+ 
+   SetmodeMask = (SetModeInsert, SetModeDelete);
+ 
+   CloseMask = (DestroyAll, RetainPermanent, RetainTemporary);
+ 
+   CircMask = (RaiseLowest, LowerHighest);
+ 
+   FocusMask = (RevertToNone, RevertToPointerRoot, RevertToParent);
+ 
+   GrabMask = (NotifyNormal, NotifyGrab,NotifyUngrab,NotifyWhileGrabbed);
+ 
+   ButtonMask = (AnyButton,Button1,Button2,Button3,Button4,Button5);
+ 
+   NotifyMask = (NotifyAncestor, NotifyVirtual,NotifyInferior,
+		 NotifyNonLinear, NotifyNonLinearVirtual, NotifyPointer,
+		 NotifyPointerRoot, NotifyDetailNone);
+ 
+   VisibilityMask = (VisibilityUnobscured, VisibilityPartiallyObscured,
+		     VisibilityFullyObscured);
+ 
+   CirculationMask = (PlaceOnTop, PlaceOnBottom);
+    
+   FamilyMask = (FamilyInternet, FamilyDECnet, FamilyChaos);
+ 
+   SizeHintsMask = (USPosition, USSize, PPosition, PSize, PMinSize, PMaxSize,
+			PResizeInc, PAspect);
+ 
+   HintsMask = @SIZE 32 SET OF SizeHintsMask;
+ 
+   WMHintsMasks = (InputHint, StateHint,IconPixmapHint,IconWindowHint,
+			IconPositionHint, IconMaskHint);
+  
+   WMHintsMask = @SIZE 32 SET OF WMHintsMasks;
+ 
+   VisualMask = (VisualIDMask, VisualScreenMask, VisualDepthMask,
+		VisualClassMask, VisualRedMaskMask, VisualGreenMaskMask,
+		VisualBlueMaskMask, VisualColormapSizeMask,
+		VisualBitsPerRGBMask);
+ 
+   WindowStateMask = (DontCareState,NormalState,ZoomState,IconicState,InactiveState);
+ 
+   PropertyMask = (PropertyNewValue, PropertyDelete);
+ 
+   ColormapMask = (ColormapUninstalled, ColormapInstalled);
+ 
+   ModeMask = (GrabModeSync, GrabModeAsync);
+ 
+   GrabReplyMask = (GrabSuccess,AlreadyGrabbed,GrabInvalidTime,GrabNotViewable,GrabFrozen);
+ 
+   AllowEventsMask = (AsyncPointer,SyncPointer,ReplayPointer,
+                      AsyncKeyboard,SyncKeyboard,ReplayKeyboard,
+                      AsyncBoth,SyncBoth);
+ 
+   ErrorMask = (Success,BadRequest, BadValue, BadWindow, BadPixmap, BadAtom,
+		BadCursor, BadFont, BadMatch,  BadDrawable,
+		BadAccess, BadAlloc, BadColor, BadGC, BadIDChoice,
+		BadName, BadLength,BadImplementation);
+ 
+   GravityMask = (ForgetGravity, NorthWestGravity, NorthGravity, NorthEastGravity,
+		  WestGravity, CenterGravity, EastGravity, SouthWestGravity,
+		  SouthGravity, SouthEastGravity, StaticGravity);
+ 
+   GXfuncMask = (GXclear, GXand, GXandReverse, GXcopy, GXandInverted, GXnoop,
+	     GXxor, GXor, GXnor, GXequiv, GXinvert, GXorReverse,
+	     GXcopyInverted, GXorInverted, GXnand, GXset);
+ 
+   FontDirMask = (FontLeftToRight, FontRightToLeft);
+ 
+   ExposeMask = (DontAllowExposures, AllowExposures, DefaultExposures);
+ 
+   ByteOrderMask = (LSBFirst, MSBFirst);
+ 
+   BitOrderMask = (LeastSignificant, MostSignificant);
+ 
+   BlankMask = (DontPreferBlanking, PreferBlanking, DefaultBlanking);
+ 
+   LedMask = (LedModeOff, LedModeOn);
+ 
+   RepeatMask = (AutoRepeatModeOff, AutoRepeatModeOn, AutoRepeatModeDefault);
+ 
+   XYZMask = (XYBitmap, XYPixmap, ZPixmap);
+ 
+   CapMask = (CapNotLast,CapButt, CapRound, CapProjecting);
+ 
+   LineMask = (LineSolid, LineOnOffDash, LineDoubleDash);
+ 
+   JoinMask = (JoinMiter, JoinRound, JoinBevel);
+ 
+   FillMask = (FillSolid, FillTiled, FillStippled,FillOpaqueStippled);
+ 
+   RuleMask = (EvenOddRule, WindingRule);
+ 
+   ClipMask = (ClipByChildren, IncludeInferiors);
+ 
+   OrderingMask = (UnSorted, YSorted, YXSorted, XYBanded);
+ 
+   CoordMask = (CoordModeOrigin, CoordModePrevious);
+ 
+   PolyShapeMask = (Complex, Nonconvex, Convex);
+ 
+   ArcMask = (ArcChord, ArcPieSlice);
+ 
+   AllocMask = (AllocNone, AllocAll);
+ 
+   DoMask = ( DoRed, DoGreen, DoBlue);
+ 
+   DoSet = @SIZE 32 SET OF DoMask;
+ 
+   ShapeMask = (CursorShape, TileShape, StippleShape);
+ 
+   HostMask = (HostInsert, HostDelete);
+ 
+   AccessMask = (DisableAccess, EnableAccess);  
+ 
+   PropMask = (PropModeReplace, PropModePrepend, PropModeAppend);
+ 
+   Stackmode = (Above, Below, TopIf, BottomIf, Opposite);
+   
+   EventMasks = (KeyPressMask, KeyReleaseMask,
+	ButtonPressMask, ButtonReleaseMask, EnterWindowMask, LeaveWindowMask,
+	PointerMotionMask, PointerMotionHintMask, Button1MotionMask, 
+	Button2MotionMask, Button3MotionMask, Button4MotionMask, 
+	Button5MotionMask, ButtonMotionMask, KeymapStateMask, 
+	ExposureMask, VisibilityChangeMask, StructureNotifyMask,
+	ResizeRedirectMask, SubstructureNotifyMask, 
+	SubstructureRedirectMask, FocusChangeMask, PropertyChangeMask, 
+	ColormapChangeMask, OwnerGrabButtonMask);
+   
+  EventMask = @SIZE 32 SET OF EventMasks;
+ 
+ 
+  Event = (Error,Reply,
+	KeyPress, KeyRelease, ButtonPress, ButtonRelease, MotionNotify, 
+       	EnterNotify, LeaveNotify, FocusIn, FocusOut, KeymapNotify, Expose,
+	GraphicsExpose, NoExpose, VisibilityNotify, CreateNotify, DestroyNotify,
+	UnmapNotify, MapNotify, MapRequest, ReparentNotify, ConfigureNotify,
+	ConfigureRequest, GravityNotify, ResizeRequest, CirculateNotify,
+	CirculateRequest,PropertyNotify,
+	SelectionClear, SelectionRequest, SelectionNotify, ColormapNotify,
+	ClientMessage,MappingNotify, LastEvent);
+       
+ 
+  XStatus = INTEGER;
+ 
+  GeometryReturn = (XValue,YValue,WidthValue,HeightValue,XNegative,YNegative);
+  
+  GeometryMask = @SIZE 32 SET OF GeometryReturn;
+  
+  XQueueMode = (QueuedAlready, QueuedAfterReading, QueuedAfterFlush);
+  
+  
+ 
+CONST  AllValues = GeometryMask {XValue,YValue,WidthValue,HeightValue};
+       PAllHints = HintsMask {PPosition, PSize, PMinSize,
+			      PMaxSize,PResizeInc,PAspect};
+       AllHints = WMHintsMask {InputHint, StateHint, IconPixmapHint,
+			       IconWindowHint,IconPositionHint, IconMaskHint};
+TYPE
+  FileModes = (AExecute,AWrite, ARead, GExecute, GWrite, GRead, 
+		OExecute,OWrite, ORead, Sticky, SetGID, SetUID);
+  FileModeSet = @SIZE 32 SET OF FileModes;
+ 
+ 
+    KeyMasks = (ShiftMask, LockMask , ControlMask , Mod1Mask, Mod2Mask ,
+	         Mod3Mask, Mod4Mask, Mod5Mask , Button1Mask , Button2Mask,
+		 Button3Mask , Button4Mask, Button5Mask, AnyModifier=15);
+ 
+    KeyMask = @SIZE 32 SET OF KeyMasks;
+ 
+ 
+   CWattributes = (CWBackPixmap, CWBackPixel,
+	    CWBorderPixmap,CWBorderPixel, CWBitGravity,
+	    CWWinGravity, CWBackingStore, CWBackingPlanes, CWBackingPixel,
+	    CWOverrideRedirect, CWSaveUnder, CWEventMask, CWDontPropogate,
+	    CWColormap, CWCursor);
+ 
+   CWMask = @SIZE 32 SET OF CWattributes;
+ 
+ 
+   CWconfigure = (CWX, CWY,CWWidth,CWHeight, CWBorderWidth,CWSibling,CWStackMode);
+ 
+   CWconfigureMask = @SIZE 32 SET OF CWconfigure;
+ 
+   GCMasks = (GCFunction, GCPlaneMask, GCForeground , GCBackground , GCLineWidth ,
+	      GCLineStyle, GCCapStyle, GCJoinStyle , GCFillStyle , GCFillRule ,
+	      GCTile , GCStipple, GCTileStipXOrigin , GCTileStipYOrigin, GCFont ,
+	      GCSubwindowMode , GCGraphicsExposures , GCClipXOrigin ,
+	      GCClipYOrigin ,
+	      GCClipMask , GCDashOffset, GCDashList, GCArcMode);
+ 
+    GCMask = @SIZE 32 SET OF GCMasks;
+   
+    MapMask = (MappingSuccess, MappingBusy,MappingFailed);
+ 
+    MapModMask = (MappingModifier,MappingKeyboard,MappingPointer);
+ 
+    ColorPlanesMask =
+	 (StaticGray,GrayScale,StaticColor,PseudoColor,TrueColor,DirectColor);
+ 
+    ScreenMask = (ScreenSaverReset, ScreenSaverActive);
+ 
+    SaverMask = (DisableScreenSaver,DisableScreenInterval);
+ 
+    BitmapFileMask = (BitmapSuccess, BitmapOpenFailed,
+			BitmapFileInvalid, BitmapNoMemory);
+   
+    XrmOptionKind = (XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg,
+			XrmoptionSepArg, XrmoptionSkipArg, XrmoptionSkipLine);
+ 
+    KBmasks = (KBKeyClickPercent , KBBellPercent, KBBellPitch, KBBellDuration ,
+	       KBLed , KBLedMode , KBKey , KBAutoRepeatMode);
+ 
+    KBMask = @SIZE 32 SET OF KBmasks;
+ 
+ (*
+ * XAssoc - Associations used in the XAssocTable data structure.  The 
+ * associations are used as circular queue entries in the association table
+ * which is contains an array OF circular queues (buckets).
+ *)
+   XAssocTable = RECORD
+	next: XAssocTablePtr;	 (* Next object in this bucket. *)
+	prev: XAssocTablePtr;	 (* Previous obejct in this bucket. *)
+	display: DisplayPtr;	 (* Display which ownes the id. *)
+	x_id: XID;		 (* X Window System id. *)
+	data: CharArrayPtr;	 (* Pointer TO unkindd memory. *)
+   END;
+ 
+ 
+ 
+	Depth = RECORD
+		depth,nvisuals: INTEGER;
+		visuals: VisualPtr;
+	END;
+ 
+   DepthPtr = DYNARRAY @NOCHECK @NOCOUNT OF Depth;
+   BackingstoreMask = (NotUseful, WhenMapped, Always);
+  
+	Screen = RECORD
+		ext_data: ExtDataPtr;
+		display: DisplayPtr;
+		root: Window;
+		width,height,mwidth,mheight,ndepths: INTEGER;
+		depths: DepthPtr;
+		root_depth: INTEGER;
+		root_visual: VisualPtr;
+		default_gc: GC;
+		cmap: Colormap;
+		white_pixel,black_pixel: INTEGER;
+		max_maps,min_maps: INTEGER;
+		backing_store: BackingstoreMask;
+		save_unders: LongBoolean;
+		root_input_mask: INTEGER;
+	END;
+ 
+  ScreenArrayPtr = DYNARRAY @NOCHECK @NOCOUNT OF Screen;
+ 
+ 
+  XRectangle = RECORD
+     x, y: Short;
+     width, height: ShortUnsigned;
+  END;
+ 
+   XPoint = RECORD
+     x, y: Short;
+   END;
+ 
+ 
+ XTextItem = RECORD
+	chars: CharArrayPtr;	 (* pointer TO string *)
+	nchars: INTEGER;	 (* number OF characters *)
+	delta: INTEGER;		 (* delta between strings *)
+	font: Font;		 (* font TO print it in, None don't change *)
+   END;
+ (*
+ * PolyText routines take these as arguments.
+ *)
+ XTextItem16 = RECORD
+	chars: CharArrayPtr;	 (* pointer TO string *)
+	nchars: INTEGER;	 (* number OF characters *)
+	delta: INTEGER;		 (* delta between strings *)
+	font: Font;		 (* font TO print it in, None don't change *)
+   END;
+ 
+ 
+ 
+  Pixel = INTEGER;
+ (*Inline PROCEDUREs for C macros *)
+ 
+ 
+PROCEDURE @INLINE ConnectionNumber (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE RootWindow (display: DisplayPtr; scr: INTEGER): Window;
+PROCEDURE @INLINE DefaultScreen (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE DefaultVisual (display: DisplayPtr; scr: INTEGER): VisualPtr;
+PROCEDURE @INLINE DefaultGC (display: DisplayPtr; scr: INTEGER): GC;
+PROCEDURE @INLINE BlackPixel (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE WhitePixel (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE AllPlanes (display: DisplayPtr): PlaneMask;
+PROCEDURE @INLINE QLength (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE DisplayWidth (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DisplayHeight (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DisplayWidthMM (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DisplayHeightMM (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DisplayCells (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DisplayPlanes (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE ServerVendor (display: DisplayPtr): CharArrayPtr;
+PROCEDURE @INLINE ProtocolVersion (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE ProtocolRevision (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE VendorRelease (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE DisplayString (display: DisplayPtr): CharArrayPtr;
+PROCEDURE @INLINE DefaultDepth (display: DisplayPtr; scr: INTEGER): INTEGER;
+PROCEDURE @INLINE DefaultColormap (display: DisplayPtr; scr: INTEGER): Colormap;
+PROCEDURE @INLINE BitmapUnit (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE BitmapBitOrder (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE BitmapPad (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE ImageByteOrder (display: DisplayPtr): INTEGER;
+PROCEDURE @INLINE XUniqueContext (): XContext;
+ 
+ 
+ (* RECORD Structures *)
+
+TYPE
+ 
+  syncfunc = IntProc;
+  allocfunc = IntProc;
+ 
+  Display = RECORD
+    ext_data: ExtDataPtr;
+    next: DisplayPtr;
+    fd: INTEGER;		 (* Network socket. *)
+    lock: LongBoolean;
+    proto_major_version: INTEGER;
+    proto_minor_version: INTEGER;
+    vendor: CharArrayPtr;
+    resource_base: INTEGER;	 (* resource-base *)
+    resource_mask: INTEGER;	 (* resource-mask *)
+    resource_id: INTEGER;
+    resource_shift: INTEGER;
+    resource_alloc: allocfunc;	 (* allocator function pointer *)
+    byte_order: INTEGER;		 (* screen byte order *)
+    bitmap_unit: INTEGER;	 (* padding and data requirements *)
+    bitmap_pad: INTEGER;		 (* padding for bitmaps *)
+    bitmap_bit_order: INTEGER;  	 (* lsb or msb *)
+    nformats: INTEGER;		 (* number OF pixmap formats *)
+    pixmap_format: ScreenFormatPtr; (* pointer TO ScreenFormat structure*)    
+    vnumber: INTEGER;		 (* X protocol version number. *)
+    release: INTEGER;		 (* release number OF the server *)
+    head, tail: QEventPtr;	 (* Input event queue. *)
+    qlen: INTEGER;		 (* Length OF input event queue *)
+    last_req_read: INTEGER;
+    request: INTEGER;		 (* Id OF last request. *)
+    last_req: CharArrayPtr;		 (* Last PolySegment request *)
+    buffer: CharArrayPtr;		 (* Output buffer starting address. *)
+    bufptr: CharArrayPtr;		 (* Output buffer index pointer. *)
+    bufmax: CharArrayPtr;		 (* Output buffer maximum+1 address. *)
+    max_request_size: UNSIGNED;
+    db: XrmHashBucket;
+    synchandler: syncfunc; 	 (*synchronization handler*)
+    display_name: CharArrayPtr; (* "host: display" string used *)
+    default_screen: INTEGER;     (* default screen number *)
+    nscreens: INTEGER;		 (* number OF screens *)
+    screens: ScreenArrayPtr; 	 (* pointer TO list OF screens *)
+    motion_buffer: INTEGER;	 (* size OF motion buffer *)
+    current: Window;
+    min_keycode: INTEGER;	
+    max_keycode: INTEGER;	
+    keysyms: KeySymPtr;
+    modifiers: XModifierKeysPtr;
+    xdefaults: CharArrayPtr;	 (* contents OF defaults from server *)
+    scratch_buffer: CharArrayPtr;
+    scratch_length: UNSIGNED;
+    ext_number: INTEGER;	 (*Extension number*)
+    ext_procs: XExtensionPtr;	 (*extensions initialized on this display*)
+    event_vec: Array[0..127] OF PROCEDURE (): BOOLEAN;
+    wire_vec: Array [0..127] OF PROCEDURE (): Status;
+  END;
+ 
+ 
+	Visual = RECORD
+		ext_data: ExtDataPtr;
+		visualid: VisualID;
+		class,red_mask,green_mask,blue_mask,
+		bits_per_rgb,map_entries: INTEGER;
+	END;
+ 
+ 
+ 
+ (*
+ * Format structure; describes ZFormat data the display will understand.
+ *)
+	ScreenFormat = RECORD
+	 ext_data: ExtDataPtr;	 (* hook for extension TO hang data *)
+	 depth: INTEGER;	 (* depth OF this image format *)
+	 bits_per_pixel: INTEGER; (* bits/pixel at this depth *)
+	 scanline_pad: INTEGER;	 (* scanline must padded TO this multiple *)
+	END;
+ 
+ (*
+ * Data structure for setting window attributes.
+ *)
+   XSetWindowAttributes = RECORD
+	background_pixmap: Pixmap; (* background or None or ParentRelative *)
+	background_pixel: Pixel; (* background pixel *)
+	border_pixmap: Pixmap;	 (* border OF the window *)
+	border_pixel: Pixel;	 (* border pixel value *)
+	bit_gravity: GravityMask; (* one OF bit gravity values *)
+	win_gravity: GravityMask; (* one OF the window gravity values *)
+	backing_store: BackingstoreMask; (* NotUseful, WhenMapped, Always *)
+	backing_planes: PlaneMask; (* planes TO be preseved if possible *)
+	backing_pixel: Pixel;   (* value TO use in restoring planes *)
+        save_under: LongBoolean;  (* should bits under be saved? (popups) *)
+        event_mask: EventMask;	 (* set OF events that should be saved *)
+        do_not_propagate_mask: EventMask; (* set OF events that should not propagate *)
+	override_redirect: LongBoolean; (* boolean value for override-redirect *)
+	colormap: Colormap;	 (* color map TO be associated with window *)
+	cursor: Cursor;		 (* cursor TO be displayed (or None) *)
+    END;
+ 
+  XWindowAttributes = RECORD
+	 x, y: INTEGER;		 (* location OF window *)
+	 width, height: INTEGER; (* width and height OF window *)
+	 border_width: INTEGER;	 (* border width OF window *)
+	 depth: INTEGER;        (* depth OF window *)
+	 visual: VisualPtr;	 (* the associated visual structure *)
+	 root: Window;          (* root OF screen containing window *)
+	 class: WindowclassMask;	 (* InputOutput, InputOnly*)
+	 bit_gravity: GravityMask;	 (* one OF bit gravity values *)
+	 win_gravity: GravityMask;	 (* one OF the window gravity values *)
+	 backing_store: BackingstoreMask; (* NotUseful, WhenMapped, Always *)
+	 backing_planes: PlaneMask;	 (* planes TO be preserved if possible *)
+	 backing_pixel: Pixel;	 (* value TO be used when restoring planes *)
+         save_under: LongBoolean;	 (* boolean, should bits under be saved? *)
+         colormap: Colormap;	 (* color map TO be associated with window *)
+	 map_installed: LongBoolean;	 (* boolean, is color map currently installed *)
+	 map_state: MapWAMask;         (* IsUnmapped, IsUnviewable, IsViewable *)
+         all_event_masks: EventMask;	 (* set OF events all people have interest in *)
+	 your_event_mask: EventMask;	 (* my event mask *)
+         do_not_propagate_mask: EventMask; (* set OF events that should
+                                            not propagate *)
+	 override_redirect: LongBoolean;	 (* boolean value for override-redirect *)
+   END;
+ 
+ (*
+ * Data Structure for host information
+ *)
+ 
+   XHostAddress = RECORD
+	family: FamilyMask;	
+	length: INTEGER;	 (* length OF address, in bytes *)
+	address: CharArrayPtr;		 (* pointer TO address *)
+   END;
+ 
+ 
+ (*
+ * Data structure for setting graphics context.
+ *)
+ 
+ 
+   XGCValues  = RECORD
+(*	foo: INTEGER; (* ?? need this TO get dbx TO properly print the record ?? *)
+*)
+	function: GXfuncMask;	 (* logical operation *)
+	planes: PlaneMask;	 (* plane mask *)
+	foreground: Pixel;	 (* foreground pixel *)
+	background: Pixel;  	 (* background pixel *)
+	line_width: INTEGER;	 (* line width *)
+	line_style: LineMask;	 (* Solid, OnOffDash, DoubleDash *)
+	cap_style: CapMask;  	 (* NotLast, Butt, Round, Projecting *)
+	join_style: JoinMask;	 (* Miter, Round, Bevel *)
+	fill_style: FillMask;	 (* Solid, Tiled, Stippled *)
+	fill_rule: RuleMask;	 (* EvenOdd, Winding *)
+	arc_mode: ArcMask;	 (* PieSlice *)
+	tile: Pixmap;		 (* tile pixmap for tiling operations *)
+	stipple: Pixmap;	 (* stipple 1 plane pixmap for stipping *)
+	ts_x_origin: INTEGER;	 (* offset for tile or stipple operations *)
+	ts_y_origin: INTEGER;
+        font: Font;	        (* default text font for text operations *)
+	subwindow_mode: ClipMask; (* ClipByChildren, IncludeInferiors *)
+	graphics_exposures: LongBoolean; (* boolean, should exposures be generated *)
+	clip_x_origin: INTEGER; (* origin for clipping *)
+	clip_y_origin: INTEGER;
+	clip_mask: Pixmap;	 (* bitmap clipping; other calls for rects *)
+	dash_offset: INTEGER;	 (* patterned/dashed line information *)
+	dashes: CharArrayPtr;
+   END;
+ 
+ (*
+ * Graphics context.  All Xlib routines deal in this rather than
+ * in raw protocol GContext ID's.  This is so that the library can keep
+ * a "shadow" set OF values, and thus avoid passing values over the
+ * wire which are not in fact changing. 
+ *)
+ 
+  XGC = RECORD
+    ext_data: ExtDataPtr; (* hook for extension TO hang data *)
+    gid: GContext;  	 (* protocol ID for graphics context *)
+    rects: LongBoolean;  	 (* boolean: TRUE if clipmask is list OF rectangles *)
+    dashes: LongBoolean;  	 (* boolean: TRUE if dash-list is really a list *)
+    dirty: UNSIGNED; 	 (*cache dirty bits *)
+    values: XGCValues;  (* shadow structure OF values *)
+   END;
+ 
+ (* 
+ * Data structure for XReconfigureWindow
+ *)
+ 
+  XWindowChanges = RECORD
+     x, y: INTEGER;
+     width, height: INTEGER;
+     border_width: INTEGER;
+     sibling: Window;
+     stack_mode: Stackmode;
+   END;
+ 
+ 
+ (*
+   Data structure used by color operations. Note flags should be 
+   DoSet for all 3 color values, but it's a CHAR. That's C for you.
+ *)
+   XColor = RECORD
+	 pixel: UNSIGNED;
+	 red, green, blue: ShortUnsigned;
+ 	 flags: @SIZE 8 @ALIGN 8 CHAR;  (* DoRed, DoGreen, DoBlue *)
+	 pad: @SIZE 8 @ALIGN 8 CHAR;
+   END;
+ 
+
+ (* Data structures for graphics operations *)
+ 
+  XSegment = RECORD
+     x1, y1, x2, y2: Short;
+  END;
+    
+    
+   XArc = RECORD
+     x, y: Short;
+     width, height: ShortUnsigned;
+     angle1, angle2: Short;
+   END;
+ 
+   func = RECORD
+	create_image: PROCEDURE (): XImagePtr;
+	destroy_image: PROCEDURE (): INTEGER;
+	get_pixel: PROCEDURE (): UNSIGNED;
+	put_pixel: PROCEDURE (): INTEGER;
+	sub_image: PROCEDURE (): XImagePtr;
+	add_pixel: PROCEDURE (): INTEGER;
+    end;
+ 
+ (*
+ * Data structure for "image" data, used by image manipulation routines.
+ *)
+  XImage = RECORD
+    height, width: INTEGER;	 (* size OF image *)
+    xoffset: INTEGER;		 (* number OF pixels offset in X direction *)
+    format: XYZMask;		 (* Bitmap, XYPixmap, ZPixmap *)
+    data: CharArrayPtr;		 (* pointer TO image data *)
+    byte_order: ByteOrderMask;	 (* data byte order, LSBFirst, MSBFirst *)
+    bitmap_unit: INTEGER;	 (* quant. OF scanline 8, 16, 32 *)
+    bitmap_bit_order: BitOrderMask; (* LeastSignificant, MostSignificant *)
+    bitmap_pad: INTEGER;	 (* 8, 16, 32 either XY or ZFormat *)
+    depth: INTEGER;		 (* depth OF image *)
+    bytes_per_line: INTEGER;	 (* accelarator TO next line *)
+    bits_per_pixel: INTEGER;	 (* bits per pixel (ZFormat) *)
+    red_mask,green_mask,blue_mask: UNSIGNED;
+    obdata: CharArrayPtr;		 (* hook for the object routines TO hang on *)
+    f: func;
+  END;
+ 
+ (* Data structure for XChangeKeyboardControl *)
+ 
+  XKeyboardControl = RECORD
+        key_click_percent: INTEGER;
+        bell_percent: INTEGER;
+        bell_pitch: UNSIGNED;
+        bell_duration: UNSIGNED;
+        led: INTEGER;
+        led_mode: LedMask;
+        key: INTEGER;
+        auto_repeat_mode: RepeatMask; (* On, Off, Default *)
+   END;
+ 
+ (* Data structure for XGetKeyboardControl *)
+ 
+   XKeyboardState = RECORD
+        key_click_percent: INTEGER;
+	bell_percent: INTEGER;
+	bell_pitch, bell_duration: UNSIGNED;
+	led_mask: LedMask;
+	auto_repeats: Array[1..32] OF CHAR;
+   END;
+ 
+ (* Data structure for XGetMotionEvents.  *)
+ 
+  XTimeCoord = RECORD
+        time: Time;
+	x, y: ShortUnsigned;
+  END;
+ 
+   XModifierKeys = RECORD
+	lock: INTEGER;
+	shift_a, shift_b: INTEGER;
+	control_a, control_b: INTEGER;
+	mod1_a, mod1_b: INTEGER;
+	mod2_a, mod2_b: INTEGER;
+	mod3_a, mod3_b: INTEGER;
+	mod4_a, mod4_b: INTEGER;
+	mod5_a, mod5_b: INTEGER;
+   END;	
+ 
+ 
+ (*
+ * A "XEvent" structure always  has type as the first entry.  This 
+ * uniquely identifies what type OF event it is.  The pointer TO the
+ * generic event must be cast before use TO access information
+ * in the structure.
+ *)
+ 
+ (*
+ * Definitions OF specific events.  If new event types are defined here in
+ * the future, the Xlibint.h file union for XBiggestEvent should also have
+ * the event type added, TO make sure that Xlib maintains enough space for
+ * the largest event.  We are trying TO avoid fragmentation OF the malloc
+ * pool by keeping the space allocated the same size for all events, even
+ * if the actual information is much smaller.
+ *)
+ 
+  XKeyEvent = RECORD
+	kind: Event;	       (* OF event *)
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;    	 (* "event" window it is reported relative TO *)
+	root: Window;        	 (* root window that the event occured on *)
+	subwindow: Window;	 (* child window *)
+	time: Time;		 (* milliseconds *)
+	x, y: INTEGER;		 (* pointer x, y coordinates in event window *)
+	x_root, y_root: INTEGER; (* coordinates relative TO root *)
+	state: KeyMask;		 (* key or button mask *)
+	keycode: UNSIGNED;	 (* detail *)
+	same_screen: LongBoolean;	 (* same screen flag *)
+   END;
+ 
+ XKeyPressedEvent = XKeyEvent;
+ XKeyReleasedEvent = XKeyEvent;
+ 
+ XButtonEvent = RECORD
+	kind: Event;		 (* OF event *)
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;	        (* "event" window it is reported relative TO *)
+	root: Window;	        (* root window that the event occured on *)
+	subwindow: Window;	 (* child window *)
+	time: Time;		 (* milliseconds *)
+	x, y: INTEGER;		 (* pointer x, y coordinates in event window *)
+	x_root, y_root: INTEGER; (* coordinates relative TO root *)
+	state: KeyMask;		 (* key or button mask *)
+	button: ButtonMask;	 (* detail *)
+	same_screen: LongBoolean;	 (* same screen flag *)
+   END;
+ 
+ XButtonPressedEvent = XButtonEvent;
+ XButtonReleasedEvent = XButtonEvent;
+ 
+  XMotionEvent  = RECORD
+	kind: Event;		 (* OF event *)
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;	        (* "event" window it is reported relative TO *)
+	root: Window;	        (* root window that the event occured on *)
+	subwindow: Window;	 (* child window *)
+	time: Time;		 (* milliseconds *)
+	x, y: INTEGER;		 (* pointer x, y coordinates in event window *)
+	x_root, y_root: INTEGER; (* coordinates relative TO root *)
+	state: KeyMask;		 (* key or button mask *)
+	is_hint: CHAR;		 (* detail *)
+	same_screen: LongBoolean;	 (* same screen flag *)
+   END;
+ XPointerMovedEvent= XMotionEvent;
+ 
+ XCrossingEvent = RECORD
+	kind: Event;		 (* OF event *)
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;	        (* "event" window it is reported relative TO *)
+	root: Window;	        (* root window that the event occured on *)
+	subwindow: Window;	 (* child window *)
+	time: Time ;		 (* milliseconds *)
+	x, y: INTEGER;		 (* pointer x, y coordinates in event window *)
+	x_root, y_root: INTEGER; (* coordinates relative TO root *)
+	mode: GrabMask;		 (* Normal, Grab, Ungrab *)
+	detail: NotifyMask;	 (* Ancestor, virtual, Inferior, NonLinear,
+				   NonLinearVirtual *)
+	same_screen: LongBoolean;	 (* same screen flag *)
+	focus: LongBoolean;		 (* boolean focus *)
+	state: KeyMask;		 (* key or button mask *)
+   END;
+ XEnterWindowEvent = XCrossingEvent;
+ XLeaveWindowEvent = XCrossingEvent;
+ 
+ XFocusChangeEvent = RECORD
+	kind: Event;		 (* FocusIn or FocusOut *)
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;		 (* window OF event *)
+	mode: GrabMask;		 (* Normal, Grab, Ungrab *)
+	detail: NotifyMask;	 (* Ancestor, Virtual, Inferior, NonLinear,
+				NonLinearVirtual, Pointer, PointerRoot, None *)
+   END;
+ 
+ XFocusInEvent = XFocusChangeEvent;
+ XFocusOutEvent = XFocusChangeEvent;
+ 
+ (* generated on EnterWindow and FocusIn  when KeyMapState selected *)
+ XKeymapEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	dummy: Window;
+	key_vector: Array [1..32]of CHAR;
+ END;
+ 
+ XExposeEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	x, y: INTEGER;
+	width, height: INTEGER;
+	count: INTEGER;
+   END;
+ 
+ XGraphicsExposeEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	drawable: Drawable;
+	x, y: INTEGER;
+	width, height: INTEGER;
+	count: INTEGER;
+	major_code: INTEGER;	 (* core is CopyArea or CopyPlane *)
+	minor_code: INTEGER;	 (* not defined in the core *)
+   END;
+ 
+ XNoExposeEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	drawable: Drawable;
+	major_code: INTEGER;	 (* core is CopyArea or CopyPlane *)
+	minor_code: INTEGER;	 (* not defined in the core *)
+  END;
+ 
+ XVisibilityEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	state: VisibilityMask;	 (* either Obscured or UnObscured *)
+   END;
+ 
+  XCreateWindowEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	parent: Window;		 (* parent OF the window *)
+	window: Window;		 (* window id OF window created *)
+	x, y: INTEGER;		 (* window location *)
+	width, height: INTEGER;	 (* size OF window *)
+	border_width: INTEGER;	 (* border width *)
+	override: LongBoolean;		 (* creation should be overridden *)
+   END;
+ 
+ XDestroyWindowEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+   END;
+ 
+ XUnmapEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;		
+	window: Window;
+	from_configure: LongBoolean;
+   END;
+ 
+ XMapEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+	override: LongBoolean;		 (* boolean, is override set... *)
+   END;
+ 
+ XMapRequestEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	parent: Window;
+	window: Window;
+   END;
+ 
+ XReparentEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+	parent: Window;
+	x, y: INTEGER;
+	override_redirect: LongBoolean;
+   END;
+ 
+ XConfigureEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+	x, y: INTEGER;
+	width, height: INTEGER;
+	border_width: INTEGER;
+	above: Window;
+	override_redirect: LongBoolean;
+  END;
+ 
+ XGravityEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+	x, y: INTEGER;
+  END;
+ 
+  XResizeRequestEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	width, height: INTEGER;
+   END;
+ 
+ XConfigureRequestEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	parent: Window;
+	window: Window;
+	x, y: INTEGER;
+	width, height: INTEGER;
+	border_width: INTEGER;
+	above: Window;
+	detail: Stackmode;	 (* Above, Below, TopIf, BottomIf, Opposite *)
+	value_mask: UNSIGNED;
+   END;
+ 
+ XCirculateEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	event: Window;
+	window: Window;
+	place: CirculationMask;
+  END;
+ 
+ XCirculateRequestEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	parent: Window;
+	window: Window;
+	place: CirculationMask;
+   END;
+ 
+ XPropertyEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	atom: Atom;
+	time: Time;
+	state: PropertyMask;	 (* NewValue, Deleted *)
+   END;
+ 
+ XSelectionClearEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	selection: Atom;
+	time: Time;
+   END;
+ 
+ XSelectionRequestEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	owner: Window;
+	requestor: Window;
+	selection: Atom;
+	target: Atom;
+	property: Atom;
+	time: Time;
+   END;
+ 
+ XSelectionEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	requestor: Window;
+	selection: Atom;
+	target: Atom;
+	property: Atom;		 (* ATOM or None *)
+	time: Time;
+   END;
+ 
+ XColormapEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	colormap: Colormap;	 (* COLORMAP or None *)
+	new: LongBoolean;
+	state: ColormapMask;
+   END;
+ 
+ imbedded = RECORD
+	   CASE INTEGER of
+		1: b: ARRAY[0..19] OF CHAR|
+		2: s: ARRAY[0..9] OF Short|
+		3: l: ARRAY[0..4] OF INTEGER|
+	   END;
+	END;		
+ 
+  XClientMessageEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	message_type: Atom;
+	format: INTEGER;
+	data: imbedded;
+   END;
+ 
+   XMappingEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+	request: MapModMask;
+	first_keycode: INTEGER;
+	count: INTEGER;
+   END;
+ 
+ 
+ XErrorEvent = RECORD
+	kind: Event;
+	display: DisplayPtr;
+	resourceid: XID;	
+	serial: INTEGER;	 (* serial number OF failed request *)
+	error_code: CHAR;	 (* error code OF failed request *)
+	request_code: CHAR; 	 (* Major op-code OF failed request *)
+	minor_code: CHAR;	 (* Minor op-code OF failed request *)
+   END;
+ 
+ (*
+ * this record is defined so Xlib can always use the same sized
+ * event structure internally.
+ *)
+ 
+   XAnyEvent = RECORD
+	kind: Event;
+	serial: UNSIGNED;      (* # OF last request processed by server *)
+	send_event: LongBoolean;      (* true if this came from a SendEvent request *)
+	display: DisplayPtr;
+	window: Window;
+   END;
+ 
+   XPadEvent = Array [1..24] OF INTEGER;
+
+  XEvent = RECORD
+      CASE Event of
+	| KeyPress:             xkeydown: XKeyEvent
+	| KeyRelease:           xkeyup: XKeyEvent
+	| ButtonPress:          xbuttondown: XButtonEvent
+	| ButtonRelease:        xbuttonup: XButtonEvent
+	| MotionNotify: 	xmotion: XMotionEvent
+	| EnterNotify: 	        xcrossingin: XCrossingEvent 
+	| LeaveNotify:          xcrossingout: XCrossingEvent
+	| FocusIn:              xfocusin: XFocusChangeEvent 
+	| FocusOut:             xfocusout: XFocusChangeEvent 
+	| KeymapNotify: 	xkeymap: XKeymapEvent 
+	| Expose:               xexpose: XExposeEvent 
+	| GraphicsExpose:       gexpose: XGraphicsExposeEvent 
+	| NoExpose:             xnoexpose: XNoExposeEvent 
+	| VisibilityNotify:     xvisibility: XVisibilityEvent 
+	| CreateNotify: 	xcreatewindow: 	XCreateWindowEvent 
+	| DestroyNotify:        xdestroywindow: XDestroyWindowEvent 
+	| UnmapNotify:          xunmap: XUnmapEvent 
+	| MapNotify:            xmap: XMapEvent 
+	| MapRequest:           xmaprequest: XMapRequestEvent 
+	| ReparentNotify:       xreparent: XReparentEvent 
+	| ConfigureNotify:      xconfigure: XConfigureEvent 
+	| ConfigureRequest:     xconfigurerequest: XConfigureRequestEvent 
+	| GravityNotify:        xgravity: XGravityEvent 
+	| ResizeRequest:        xresizerequest: XResizeRequestEvent 
+	| CirculateNotify:      xcirculate: XCirculateEvent 
+	| CirculateRequest:     xcirculaterequest: XCirculateRequestEvent 
+	| PropertyNotify:       xproperty: XPropertyEvent 
+	| SelectionClear:       xselectionclear: XSelectionClearEvent 
+	| SelectionRequest:     xselectionrequest: XSelectionRequestEvent 
+	| SelectionNotify:      xselection: XSelectionEvent 
+	| ColormapNotify:       xcolormp: XColormapEvent 
+	| ClientMessage:        xclient: XClientMessageEvent
+	| MappingNotify:        xmapping: XMappingEvent
+	| LastEvent:           xpad: XPadEvent 
+    ELSE                        xany: XAnyEvent;
+    END;
+  END;
+ 
+ 
+ (*
+ * _QEvent datakind for use in input queueing.
+ *)
+   XQEvent = RECORD
+	next: QEventPtr;
+	event: XEvent;
+   END;
+ 
+ 
+  XCharStruct = RECORD
+    lbearing: Short;	 (* origin TO left edge OF raster *)
+    rbearing: Short;	 (* origin TO right edge OF raster *)
+    width: Short;	 (* advance TO next char's origin *)
+    ascent: Short;	 (* baseline TO top edge OF raster *)
+    descent: Short;	 (* baseline TO bottom edge OF raster *)
+    attributes: ShortUnsigned;	 (* random per char flags for Interleaf *)
+   END;
+ 
+ (*
+ * To allow arbitrary information with fonts, there are additional properties
+ * returned.
+ *)
+ XFontProp = RECORD
+	name: Atom;
+        card32: Cardinal;
+   END;
+ 
+ XFontStruct = RECORD
+    ext_data: ExtDataPtr;	 (* hook for extension TO hang data *)
+    fid: Font;            	 (* Font id for this font *)
+    direction: FontDirMask;	 (* direction the font is painted *)
+    min_char_or_byte2: UNSIGNED;
+    max_char_or_byte2: UNSIGNED;
+    min_byte1: UNSIGNED;
+    max_byte1: UNSIGNED;
+    all_chars_exist: LongBoolean;	 (* flag if all characters have non-zero size*)
+    default_char: UNSIGNED;	 (* char TO print for undefined character *)
+    n_properties: INTEGER;   	 (* how many properties there are *)
+    properties: XFontPropPtr;	 (* pointer TO array OF additional properties*)
+    min_bounds: XCharStruct;	 (* minimum bounds over all existing char*)
+    max_bounds: XCharStruct;	 (* maximum bounds over all existing char*)
+    per_char: XCharStructPtr;	 (* first_char TO last_char information *)
+    ascent: INTEGER;
+    descent: INTEGER;
+   END;
+ 
+  aspect = RECORD
+	x,y: INTEGER;
+  end;
+ 
+  XSizeHints = RECORD
+	flags: HintsMask;
+	x,y: INTEGER;
+	width,height: INTEGER;
+	min_width, min_height: INTEGER;
+	max_width, max_height: INTEGER;
+	width_inc, height_inc: INTEGER;
+	min_aspect: aspect;
+	max_aspect: aspect;
+  END;
+ 
+  XIconSize = RECORD
+	min_width, min_height: INTEGER;
+
+	red_max, red_multi, green_max, green_mult: UNSIGNED;
+	blue_max,blue_multi,base_pixel: UNSIGNED;
+   END;
+ 
+   XWMHints = RECORD
+	flags: WMHintsMask;
+	input: LongBoolean;
+	initial_state: INTEGER;
+	icon_pixmap: Pixmap;
+	icon_window: Window;
+	icon_x, icon_y: INTEGER;
+	icon_mask: Pixmap;
+    END;
+ 
+XRegion; (*Opaque reference TO Region data type *)
+ 
+   XComposeStatus = RECORD
+	compose_ptr: CharArrayPtr;
+	chars_matched: INTEGER;
+   END;
+  
+   XVisualInfo = RECORD
+	visual: VisualPtr;
+	visualid: VisualID;
+	screen,depth,class,red_mask,green_mask: INTEGER;
+	blue_mask,colormap_size,bits_per_rgb: INTEGER;
+	
+   END;
+ 
+   XStandardColormap = RECORD
+	colormap: Colormap;
+	red_max, red_multi, green_max, green_mult: UNSIGNED;
+	blue_max,blue_multi,base_pixel: UNSIGNED;
+   END;
+ 
+   XrmValue = RECORD
+	size: UNSIGNED;
+	addr: CharArrayPtr;
+   END; 
+ 
+   XrmOptionDescRec = RECORD
+	options: CharArrayPtr;
+	resourceName: CharArrayPtr;
+	argKind: XrmOptionKind;
+	value: CharArrayPtr;
+   END;
+  XFontStructList = DYNARRAY @NOCHECK @NOCOUNT OF XFontPtr;
+  XrmOptionDescList = DYNARRAY @NOCHECK @NOCOUNT OF XrmOptionDescRec;
+  XAssocListPtr = DYNARRAY @NOCHECK @NOCOUNT OF XAssocTable;
+  XTextPtr = DYNARRAY @NOCHECK @NOCOUNT OF XTextItem;
+  XText16Ptr = DYNARRAY @NOCHECK @NOCOUNT OF XTextItem16;
+  XHostList = DYNARRAY @NOCHECK @NOCOUNT OF XHostAddress;
+  RectPtr = DYNARRAY @NOCHECK @NOCOUNT OF XRectangle;
+  WindowListPtr = DYNARRAY @NOCHECK @NOCOUNT OF POINTER @NOCHECK TO Window;
+  PointPtr = DYNARRAY @NOCHECK @NOCOUNT OF XPoint;
+ 
+ (* PROCEDUREs *)
+ 
+PROCEDURE @EXTERNAL XOpenDisplay (CONST display: ARRAY @NOCOUNT OF CHAR): DisplayPtr;
+ 
+PROCEDURE @EXTERNAL XNoOp (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XCloseDisplay (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XDefaultRootWindow (display: DisplayPtr): Window;
+
+PROCEDURE @EXTERNAL XDefaultColormap (display: DisplayPtr;
+    scr: INTEGER)
+  : Colormap;
+
+PROCEDURE @EXTERNAL XCreateSimpleWindow (display: DisplayPtr;
+    parent: Window;
+    x, y, width, height: INTEGER;
+    border_width: INTEGER;
+    border: Pixmap;
+    background: Pixmap)
+  : Window;
+ 
+PROCEDURE @EXTERNAL XCreateWindow (display: DisplayPtr;
+    parent: Window;
+    x, y, width, height: INTEGER;
+    border_width: INTEGER;
+    depth: INTEGER;
+    class: WindowclassMask;
+    visual: VisualPtr;
+    valuemask: CWMask;
+    CONST attributes: XSetWindowAttributes)
+  : Window;
+ 
+PROCEDURE @EXTERNAL XDestroyWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XDestroySubwindows (display: DisplayPtr;W: Window);
+ 
+PROCEDURE @EXTERNAL XMapWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XMapRaised (display: DisplayPtr; w: Window);
+ 
+PROCEDURE @EXTERNAL XMapSubwindows (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XUnmapWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XUnmapSubindows (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XResizeWindow (display: DisplayPtr; w: Window;
+        width,height: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XMoveResizeWindow (display: DisplayPtr;
+	w: Window;
+	x,y: INTEGER;
+	width,height: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetWindowBorderWidth (display: DisplayPtr;
+			w: Window;
+			width: INTEGER);
+ 
+PROCEDURE @EXTERNAL XMoveWindow (display: DisplayPtr;
+	w: Window;
+	x,y: INTEGER);
+ 
+PROCEDURE @EXTERNAL XConfigureWindow (display: DisplayPtr;
+	w: Window;
+	value_mask: CWconfigureMask;
+	CONST values: XWindowChanges);
+ 
+PROCEDURE @EXTERNAL XRaiseWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XLowerWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XCirculateWindowUp (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XCirculateWindowDown (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XCirculateSubwindows (display: DisplayPtr;
+	w: Window;
+	direction: CircMask);
+ 
+PROCEDURE @EXTERNAL XRestackWindows (display: DisplayPtr;
+			CONST windows: Array @NOCOUNT OF Window;
+			nwindows: INTEGER);
+ 
+PROCEDURE @EXTERNAL XChangeWindowAttributes (display: DisplayPtr;
+	w: Window;
+	valuemask: CWMask;
+	CONST attributes: XSetWindowAttributes);
+ 
+PROCEDURE @EXTERNAL XSetWindowBackground (display: DisplayPtr;
+	w: Window;
+	pixel: Pixel);
+ 
+PROCEDURE @EXTERNAL XSetPixmapBackground (display: DisplayPtr;
+	w: Window;
+	tile: Pixmap);
+ 
+PROCEDURE @EXTERNAL XSetWindowBorder (display: DisplayPtr;w: Window; pixel: Pixel);
+ 
+PROCEDURE @EXTERNAL XSetWindowBorderPixmap (display: DisplayPtr;w: 
+Window; tile: Pixmap);
+ 
+PROCEDURE @EXTERNAL XTranslateCoordinates (display: DisplayPtr;
+	sw,dw: Window;
+	srcx,srcy: INTEGER;
+	VAR destx,desty: INTEGER;
+	VAR child: Window): BOOLEAN;
+ 
+PROCEDURE @EXTERNAL XQueryTree (display: DisplayPtr;
+	w: Window;
+	VAR root: Window;
+	VAR parent: Window;
+	VAR children: WindowListPtr; (*ptr TO ptr OF array OF window*)
+	VAR nchildren: INTEGER): Status;
+ 
+	
+PROCEDURE @EXTERNAL XGetWindowAttributes (display: DisplayPtr;
+	w: Window;
+	VAR window_attributes: XWindowAttributes): Status;
+ 
+	
+PROCEDURE @EXTERNAL XGetGeometry (display: DisplayPtr;
+	d: Drawable;
+	VAR root: Window;
+	VAR x,y: INTEGER;
+	VAR width,height: INTEGER;
+	VAR border_width: INTEGER;
+	VAR depth: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XQueryPointer (display: DisplayPtr;
+	w: Window;
+	VAR root,child: Window;
+	VAR root_x, root_y: INTEGER;
+	VAR win_x, win_y: INTEGER;
+	VAR mask: KeyMask): BOOLEAN;
+ 
+ 
+PROCEDURE @EXTERNAL XInternAtom (display: DisplayPtr;
+	CONST atom_name: ARRAY @NOCOUNT OF CHAR;
+	only_if_exists: BOOLEAN): Atom;
+ 
+PROCEDURE @EXTERNAL XGetAtomName (display: DisplayPtr;
+	atom: Atom): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XGetWindowProperty (display: DisplayPtr;
+	w: Window;
+	property: Atom;
+	long_offset, long_length: Long;
+	delete: BOOLEAN;
+	req_type: Atom;
+	VAR actual_type: Atom;
+	VAR actual_format: PropMask;
+	VAR nitems: UNSIGNED;
+	VAR bytes_after: Long;
+	VAR prop: ARRAY @NOCOUNT OF CHAR
+	): Status;
+ 
+PROCEDURE @EXTERNAL XSetStandardProperties (display: DisplayPtr;
+	w: Window;
+	CONST application: ARRAY @NOCOUNT OF CHAR;
+	CONST icon_string: ARRAY @NOCOUNT OF CHAR;
+	icon_pixmap: Pixmap;
+	CONST argv: ARRAY @NOCOUNT OF CHAR;
+	argc: INTEGER;
+	CONST ts: XSizeHints);
+ 
+PROCEDURE @EXTERNAL XSetCommand (display: DisplayPtr;
+	w: Window;
+	CONST argv: ARRAY @NOCOUNT OF CHAR;
+	argc: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetIconSizes (display: DisplayPtr;
+	w: Window;
+	CONST size_list: XIconSize;
+	count: INTEGER);
+ 
+PROCEDURE @EXTERNAL XGetIconSizes (display: DisplayPtr;
+	w: Window;
+	VAR size_list: ARRAY @NOCOUNT OF CHAR;
+	VAR count: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XSetWMHints (display: DisplayPtr;
+	w: Window;
+	CONST wmhints: XWMHints);
+ 
+PROCEDURE @EXTERNAL XGetWMHints (display: DisplayPtr;
+	w: Window;
+	CONST wmhints: XWMHints);
+ 
+PROCEDURE @EXTERNAL XSetNormalHints (display: DisplayPtr;
+	w: Window;
+	CONST hints: XSizeHints): Status;
+ 
+PROCEDURE @EXTERNAL XSetSizeHints (display: DisplayPtr;
+	w: Window;
+	CONST hints: XSizeHints;
+        property: Atom);
+ 
+PROCEDURE @EXTERNAL XSetZoomHints (display: DisplayPtr;
+	w: Window;
+	CONST zhints: XSizeHints);
+ 
+PROCEDURE @EXTERNAL XGetZoomHints (display: DisplayPtr;
+	w: Window;
+	CONST zhints: XSizeHints): Status;
+ 
+PROCEDURE @EXTERNAL XGetSizeHints (display: DisplayPtr;
+	w: Window;
+	CONST hints: XSizeHints;
+	property: Atom): Status;
+ 
+ 
+PROCEDURE @EXTERNAL XListProperties (display: DisplayPtr;
+	window: Window; num_prop: INTEGERPtr): Atom;
+	
+PROCEDURE @EXTERNAL XChangeProperties (display: DisplayPtr;
+	window: Window;
+	property, kind: Atom;
+	format: INTEGER;
+	mode: PropMask;
+	CONST data: ARRAY @NOCOUNT OF CHAR;
+	nelements: INTEGER);
+ 
+PROCEDURE @EXTERNAL XRotateWindowProperties (display: DisplayPtr;
+	w: Window;
+	CONST properties: Array @NOCOUNT OF Atom;
+	num_prop: INTEGER;
+	npositions: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDeleteProperty (display: DisplayPtr;
+	window: Window;
+	property: Atom);
+ 
+PROCEDURE @EXTERNAL XStoreName (display: DisplayPtr;
+	w: Window;
+	CONST window_name: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XFetchName (display: DisplayPtr;
+	w: Window;
+	VAR window_name: ARRAY @NOCOUNT OF CHAR): Status;
+ 
+PROCEDURE @EXTERNAL XSetResizeHint (display: DisplayPtr;
+	w: Window;
+	width0, height0,widthinc, heightinc: INTEGER);
+ 
+PROCEDURE @EXTERNAL XGetResizeHint (display: DisplayPtr;
+	w: Window;
+	VAR width0,height0,widthinc,heightinc: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetIconWindow (display: DisplayPtr;
+	w,iw: Window);
+ 
+PROCEDURE @EXTERNAL XGetIconWindow (display: DisplayPtr; w: Window): Window;
+ 
+PROCEDURE @EXTERNAL XClearIconWindow (display: DisplayPtr;
+	w: Window);
+ 
+PROCEDURE @EXTERNAL XCreateColormap (display: DisplayPtr;
+	w: Window;
+	CONST visual: VisualPtr;
+	alloc: AllocMask): Colormap;
+ 
+PROCEDURE @EXTERNAL XCopyColormapAndFree (display: DisplayPtr;
+	cmap: Colormap): Colormap;
+ 
+PROCEDURE @EXTERNAL XSetWindowColormap (display: DisplayPtr;
+	w: Window;
+	cmap: Colormap);
+ 
+PROCEDURE @EXTERNAL XGetStandardColormap (display: DisplayPtr;
+	w: Window;
+	CONST cmap: XStandardColormap;
+	property: Atom): Status;
+ 
+PROCEDURE @EXTERNAL XSetStandardColormap (display: DisplayPtr;
+	w: Window;
+	CONST cmap: XStandardColormap;
+	property: Atom);
+ 
+PROCEDURE @EXTERNAL XFreeColormap (display: DisplayPtr;
+	cmap: Colormap);
+ 
+PROCEDURE @EXTERNAL XChangeColormap (display: DisplayPtr;
+	w: Window;
+	cmap: Colormap);
+ 
+PROCEDURE @EXTERNAL XGetHardwareColor (display: DisplayPtr;
+	cmap: Colormap;
+	VAR def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XGetColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST colorname: ARRAY @NOCOUNT OF CHAR;
+	VAR hard_def, exact_def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XStoreColors (display: DisplayPtr;
+	cmap: Colormap;
+	CONST defs: Array @NOCOUNT OF XColor;
+	ncolor: INTEGER);
+ 
+PROCEDURE @EXTERNAL XStoreColor (display: DisplayPtr; 
+	cmap: Colormap;
+	CONST def: XColor);
+ 
+PROCEDURE @EXTERNAL XLookupColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST colormap: ARRAY @NOCOUNT OF CHAR;
+	VAR screen_def: XColor;	
+	VAR exact_def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XAllocColorCells (display: DisplayPtr;
+	cmap: Colormap;
+	contig: BOOLEAN;
+	VAR plane_masks: Array @NOCOUNT OF PlaneMask;
+	nplanes: INTEGER;
+	VAR pixels: Array  @NOCOUNT OF Pixel;
+	ncolors: UNSIGNED): Status;
+ 
+PROCEDURE @EXTERNAL XAllocColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST screen_def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XAllocNamedColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST colorname: ARRAY @NOCOUNT OF CHAR;
+	VAR screen_def: XColor;
+	VAR exact_def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XAllocColorPlanes (display: DisplayPtr;
+	cmap: Colormap;
+	contig: BOOLEAN;
+	VAR pixels: Array @NOCOUNT OF Pixel;
+	ncolors: INTEGER;
+	nreds, ngreens, nblues: INTEGER;
+	VAR rmask: UNSIGNED;
+	VAR gmask: UNSIGNED;
+	VAR bmask: UNSIGNED): Status;
+ 
+ 
+PROCEDURE @EXTERNAL XStoreNamedColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST color: ARRAY @NOCOUNT OF CHAR;
+	pixel: Pixel;
+	flags: DoSet);
+ 
+PROCEDURE @EXTERNAL XFreeColors (display: DisplayPtr;
+	cmap: Colormap;
+	VAR pixels: Array  @NOCOUNT OF Pixel;
+	npixels: INTEGER;
+	planes: PlaneMask);
+ 
+PROCEDURE @EXTERNAL XQueryColor (display: DisplayPtr;
+	cmap: Colormap;
+	VAR def: XColor);
+ 
+PROCEDURE @EXTERNAL XQueryColors (display: DisplayPtr;
+	cmap: Colormap;
+	VAR defs: Array @NOCOUNT OF XColor;
+	ncolors: INTEGER);
+ 
+PROCEDURE @EXTERNAL XParseColor (display: DisplayPtr;
+	cmap: Colormap;
+	CONST spec: ARRAY @NOCOUNT OF CHAR;
+	VAR def: XColor): Status;
+ 
+PROCEDURE @EXTERNAL XCreatePixmap (display: DisplayPtr;
+	d: Drawable;
+	width,height: UNSIGNED;
+	depth: UNSIGNED): Pixmap;
+ 
+PROCEDURE @EXTERNAL XCreatePixmapFromBitmapData (display: DisplayPtr;
+	d: Drawable;
+     (*
+      * perhaps "data" could use type "Chars", but
+      * all MY bitmap data is 16 bits, so it's someone
+      * else's problem TO solve.
+      *)
+	CONST data: BitmapData;
+	width,height: UNSIGNED;
+	fg, bg: Pixel;
+	depth: UNSIGNED): Pixmap;
+ 
+PROCEDURE @EXTERNAL XPixmapSave (display: DisplayPtr;
+	w: Window;
+	x,y,width,height: INTEGER): Pixmap;
+ 
+PROCEDURE @EXTERNAL XFreePixmap (display: DisplayPtr;pixmap: Pixmap);
+ 
+PROCEDURE @EXTERNAL XPolygonRegion (
+	n: INTEGER;
+	CONST points: Array  @NOCOUNT OF XPoint;
+	fill_rule: FillMask): XRegion;
+ 
+	
+PROCEDURE @EXTERNAL XClipBox (
+	r: XRegion;
+	CONST rect: XRectangle);
+ 
+PROCEDURE @EXTERNAL XCreateRegion (): XRegion;
+ 
+PROCEDURE @EXTERNAL XSetRegion (display: DisplayPtr;
+	CONST gc: GContext;
+	r: XRegion);
+ 
+PROCEDURE @EXTERNAL XDestroyRegion (r: XRegion);
+ 
+PROCEDURE @EXTERNAL XOffsetRegion (
+	r: XRegion;
+	dx,dy: INTEGER);
+ 
+PROCEDURE @EXTERNAL XShrinkRegion (
+	r: XRegion;
+	dx,dy: INTEGER);
+ 
+PROCEDURE @EXTERNAL XIntersectRegion (sra, srb, dr: XRegion);
+ 
+PROCEDURE @EXTERNAL XUnionRegion (sra, srb, dr: XRegion);
+ 
+PROCEDURE @EXTERNAL XSubtractRegion (sra, srb, dr: XRegion);
+ 
+PROCEDURE @EXTERNAL XXorRegion (sra, srb, dr: XRegion);
+ 
+PROCEDURE @EXTERNAL XEmptyRegion (r: XRegion): INTEGER;
+ 
+PROCEDURE @EXTERNAL XEqualRegion (r1, r2: XRegion): INTEGER;
+ 
+PROCEDURE @EXTERNAL XPointInRegion (
+	r: XRegion;
+	x,y: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XRectInRegion (
+	r: XRegion;
+	x,y,width,height: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XCreateGC (display: DisplayPtr; 
+	d: Drawable;
+	valuemask: GCMask;
+	CONST values: XGCValues): GC;
+ 
+PROCEDURE @EXTERNAL XCopyGC (display: DisplayPtr;
+	CONST src: GC;
+	valuemask: GCMask;
+	CONST dest: GC);
+ 
+PROCEDURE @EXTERNAL XChangeGC (display: DisplayPtr;
+	CONST gc: GC;
+	valuemask: GCMask;
+	CONST values: XGCValues);
+ 
+PROCEDURE @EXTERNAL XFreeGC (display: DisplayPtr;CONST gc: GC);
+ 
+PROCEDURE @EXTERNAL XSetState (display: DisplayPtr;
+	CONST gc: GC;
+	foreground, background: Pixel;
+	function: GXfuncMask;
+	plane_mask: PlaneMask);
+	
+PROCEDURE @EXTERNAL XSetFunction (display: DisplayPtr;
+	CONST gc: GC;
+	function: GXfuncMask);
+ 
+PROCEDURE @EXTERNAL XSetPlaneMask (display: DisplayPtr;
+	CONST gc: GC;
+	plane_mask: PlaneMask);
+ 
+PROCEDURE @EXTERNAL XSetFillStyle (display: DisplayPtr;
+	CONST gc: GC;
+	fillstyle: FillMask);
+ 
+PROCEDURE @EXTERNAL XSetForeground (display: DisplayPtr;
+	CONST gc: GC;
+	foreground: Pixel);
+ 
+PROCEDURE @EXTERNAL XSetBackground (display: DisplayPtr;
+	CONST gc: GC;
+	background: Pixel);
+ 
+PROCEDURE @EXTERNAL XSetLineAttributes (display: DisplayPtr;
+	CONST gc: GC;
+	line_width: UNSIGNED;
+	line_style: LineMask;
+	cap_style: CapMask;
+	join_style: JoinMask);
+ 
+PROCEDURE @EXTERNAL XQueryBestSize (display: DisplayPtr;
+	class: ShapeMask;
+	d: Drawable;
+	width, height: UNSIGNED;
+	VAR rwidth, rheight: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XQueryBestTile (display: DisplayPtr;
+	d: Drawable;
+	width, height: UNSIGNED;
+	VAR rwidth, rheight: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XQueryBestStipple (display: DisplayPtr;
+	d: Drawable;
+	width,height: UNSIGNED;
+	VAR rwidth, rheight: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XSetTile (display: DisplayPtr;
+	CONST gc: GC;
+	tile: Pixmap);
+ 
+PROCEDURE @EXTERNAL XSetStipple (display: DisplayPtr;
+	CONST gc: GC;
+	tile: Pixmap);
+ 
+ 
+PROCEDURE @EXTERNAL XSetFont (display: DisplayPtr;
+	CONST gc: GC;
+	font: Font);
+ 
+PROCEDURE @EXTERNAL XSetClipOrigin (display: DisplayPtr;
+	CONST gc: GC;
+	clip_x_origin, clip_y_origin: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetClipMaks (display: DisplayPtr;
+	CONST gc: GC;
+	pixmap: Pixmap);
+ 
+PROCEDURE @EXTERNAL XSetClipRectangles (display: DisplayPtr;
+	CONST gc: GC;
+	clip_x_origin, clip_y_origin: INTEGER;
+	VAR rectangles: RectPtr;
+	n: INTEGER;
+	ordering: OrderingMask);
+ 
+PROCEDURE @EXTERNAL XSetDashes (display: DisplayPtr;
+	CONST gc: GC;
+	dash_offset: INTEGER;
+	CONST dash_list: ARRAY @NOCOUNT OF CHAR;
+	n: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawPoint (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawPoints (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST points: ARRAY @NOCOUNT OF XPoint;
+	npoints: INTEGER;
+	mode: CoordMask);
+ 
+PROCEDURE @EXTERNAL XDrawLine (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x1, y1, x2, y2: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawLines (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST points: ARRAY @NOCOUNT OF XPoint;
+	npoints: INTEGER;
+	mode: CoordMask);
+ 
+PROCEDURE @EXTERNAL XDrawSegments (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST segments: XSegment;
+	nsegments: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawRectangle (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	width,height: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XDrawRectangles (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST rectangles: XRectangle;
+	nrectangles: INTEGER);
+ 
+PROCEDURE @EXTERNAL  XDrawArc (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y, width,height, agle1, angle2: INTEGER);
+	
+PROCEDURE @EXTERNAL XDrawArcs (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST arcs: XArc;
+	narcs: INTEGER);
+ 
+PROCEDURE @EXTERNAL XClearArea (display: DisplayPtr;
+	w: Window;
+	x,y: INTEGER;
+	width,height: UNSIGNED;
+	exposures: BOOLEAN);
+ 
+PROCEDURE @EXTERNAL XClearWindow (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XCopyArea (display: DisplayPtr;
+	src,dest: Drawable;
+	CONST gc: GC;
+	src_x, src_y: INTEGER;
+	width, height: UNSIGNED;
+	dest_x, dest_y: INTEGER);
+ 
+PROCEDURE @EXTERNAL XCopyPlane (display: DisplayPtr;
+	src,dest: Drawable;
+	CONST gc: GC;
+	src_x, src_y: INTEGER;
+	width, height: UNSIGNED;
+	dest_x, dest_y: INTEGER;
+	plane: PlaneMask);
+ 
+PROCEDURE @EXTERNAL XFillRectangle (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	width,height: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XFillRectangles (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST rectangles: XRectangle;
+	nrectangles: INTEGER);
+ 
+PROCEDURE @EXTERNAL XFillPolygon (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	points: PointPtr;
+	npoints, shape, mode: INTEGER);
+ 
+PROCEDURE @EXTERNAL XFillArc (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y, width,height, angle1, angle2: INTEGER);
+ 
+ 
+PROCEDURE @EXTERNAL XFillArcs (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST arcs: XArc;
+	narcs: INTEGER);
+ 
+PROCEDURE @EXTERNAL XLoadFont (display: DisplayPtr;
+        CONST name: ARRAY @NOCOUNT OF CHAR): Font;
+ 
+PROCEDURE @EXTERNAL XQueryFont (display: DisplayPtr; CONST name: ARRAY @NOCOUNT OF CHAR): XFontPtr;
+ 
+PROCEDURE @EXTERNAL XListFontsWithInfo (display: DisplayPtr;
+	CONST pattern: ARRAY @NOCOUNT OF CHAR;
+	maxnames, count: INTEGER;
+	info: XFontStructList): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XLoadQueryFont (display: DisplayPtr;
+	CONST name: ARRAY @NOCOUNT OF CHAR): XFontPtr;
+ 
+PROCEDURE @EXTERNAL XUnloadFont (display: DisplayPtr;
+	font: Font);
+ 
+PROCEDURE @EXTERNAL XListFonts (display: DisplayPtr;
+	CONST pattern: ARRAY @NOCOUNT OF CHAR;
+	maxnames: INTEGER;
+	VAR actualcount: INTEGER): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XGetFontProperty (display: DisplayPtr;
+	CONST font_struct: XFontStruct;
+	atom: Atom;
+	VAR value: Long): INTEGER;
+ 
+PROCEDURE @EXTERNAL XFreeFontPath (CONST list: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XFreeFontNames (display: DisplayPtr;
+	CONST list: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XSetFontPath (display: DisplayPtr;
+	CONST directories: ARRAY @NOCOUNT OF CHAR;
+	ndirs: INTEGER);
+ 
+PROCEDURE @EXTERNAL XGetFontPath (display: DisplayPtr;
+	VAR npaths: INTEGER): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XTextWidth (
+	CONST font_struct: XFontStruct;
+	CONST string: ARRAY @NOCOUNT OF CHAR;
+	count: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XTextWidth16 (
+	CONST font_struct: XFontStruct;
+	CONST string: ARRAY @NOCOUNT OF CHAR;
+	count: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XPolyText (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	CONST items: XTextItem;
+	nitems: INTEGER);
+ 
+PROCEDURE @EXTERNAL XPolyText16 (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	CONST items: XTextItem16;
+	nitems: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawText (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	items: XTextPtr;
+	nitems: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawText16 (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	items: XText16Ptr;
+	nitems: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawImageString (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	CONST string: ARRAY @NOCOUNT OF CHAR;
+	length: INTEGER);
+ 
+ 
+PROCEDURE @EXTERNAL XDrawString (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	CONST string: ARRAY @NOCOUNT OF CHAR;
+	length: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDrawString16 (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	x,y: INTEGER;
+	CONST string: ShortArray;
+	length: INTEGER);
+ 
+PROCEDURE @EXTERNAL XPutImage (display: DisplayPtr;
+	d: Drawable;
+	CONST gc: GC;
+	CONST image: XImagePtr;
+	src_x,src_y,dst_x,dst_y,width,height: INTEGER);
+ 
+PROCEDURE @EXTERNAL XGetImage (display: DisplayPtr;
+	d: Drawable;
+	x,y,width,height: INTEGER;
+	plane_mask: PlaneMask;
+	format: XYZMask): XImagePtr;
+ 
+PROCEDURE @EXTERNAL XCreateImage (display: DisplayPtr;
+	CONST visual: VisualPtr;
+	depth: INTEGER;
+	format: XYZMask;
+	offset: INTEGER;
+	CONST data: ARRAY @NOCOUNT OF CHAR;
+	width, height: INTEGER;
+	xpad: INTEGER;
+	bytes_per_line: INTEGER): XImagePtr;
+ 
+PROCEDURE @EXTERNAL XGetPixel (CONST ximage: XImage;
+	x,y: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XPutPixel (CONST ximage: XImage;
+	x,y: INTEGER; pixel: Pixel): Status;
+ 
+PROCEDURE @EXTERNAL XSubImage (CONST ximage: XImage;
+	x,y,width,height: INTEGER): XImagePtr;
+ 
+PROCEDURE @EXTERNAL XAddPixel (CONST ximage: XImage; value: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XReadBitmapFile (display: DisplayPtr;
+	d: Drawable;
+	CONST filename: ARRAY @NOCOUNT OF CHAR;
+	VAR width,height: INTEGER;
+	VAR bitmap: Pixmap;
+	VAR x_hot,y_hot: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XWriteBitmapFile (display: DisplayPtr;
+	d: Drawable;
+	CONST filename: ARRAY @NOCOUNT OF CHAR;
+	VAR width,height: INTEGER;
+	VAR bitmap: Pixmap;
+	VAR x_hot,y_hot: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XCreateBitmapFromData (display: Display;
+	d: Drawable;
+	CONST data: ARRAY @NOCOUNT OF CHAR;
+	width,height: INTEGER): Pixmap;
+	
+PROCEDURE @EXTERNAL XCreateFontCursor (display: DisplayPtr;
+	shape: UNSIGNED): Cursor;
+ 
+PROCEDURE @EXTERNAL XCreatePixmapCursor (display: DisplayPtr;
+	source: Pixmap;
+	mask: Pixmap;
+	CONST scolor, bcolor: XColor;
+	x,y: INTEGER): Cursor;
+ 
+PROCEDURE @EXTERNAL XCreateGlyphCursor (display: DisplayPtr;
+	sfont, mfont: Font;
+	schar, mchar: UNSIGNED;
+	CONST scolor, bcolor: XColor): Cursor;
+ 
+PROCEDURE @EXTERNAL XQueryCursorShape (display: DisplayPtr;
+	width, height: INTEGER;
+	rwidth,rheight: INTEGERPtr);
+ 
+PROCEDURE @EXTERNAL XRecolorCursor (display: DisplayPtr;
+	cursor: Cursor;
+	scolor,bcolor: XColor);
+ 
+PROCEDURE @EXTERNAL XFreeCursor (display: DisplayPtr; cursor: Cursor);
+ 
+PROCEDURE @EXTERNAL XDefineCursor (display: DisplayPtr; w: Window; cursor: Cursor);
+ 
+PROCEDURE @EXTERNAL XUndefineCursor (display: DisplayPtr; w: Window);
+ 
+PROCEDURE @EXTERNAL XGetDefault (display: DisplayPtr;
+	CONST program, option: ARRAY @NOCOUNT OF CHAR): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XParseGeometry (
+	CONST parsestring: ARRAY @NOCOUNT OF CHAR;
+	VAR x,y,width,height: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XGeometry (
+	CONST position, default: ARRAY @NOCOUNT OF CHAR;
+	bwidth,fwidth, fheight,xadd,yadd: INTEGER;
+	VAR x,y,width,height: INTEGER): INTEGER;
+ 
+PROCEDURE @EXTERNAL XStoreBytes (display: DisplayPtr;
+	CONST bytes: ARRAY @NOCOUNT OF CHAR;
+	nbytes: INTEGER);
+ 
+PROCEDURE @EXTERNAL XStoreBuffer (display: DisplayPtr;
+	CONST bytes: ARRAY @NOCOUNT OF CHAR;
+	VAR nbytes: INTEGER;
+	buffer: INTEGER);
+ 
+ 
+PROCEDURE @EXTERNAL XFetchBytes (display: DisplayPtr;
+	VAR nbytes: INTEGER): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XFetchBuffer (display: DisplayPtr;
+	VAR nbytes: INTEGER;
+	buffer: INTEGER): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XRotateBuffer (display: DisplayPtr;rotate: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetSelectionOwner (display: DisplayPtr;
+	selection: Atom;
+	owner: Window;
+	time: Time);
+ 
+PROCEDURE @EXTERNAL XGetSelectionOwner (display: DisplayPtr; selection: 
+Atom): Window;
+ 
+PROCEDURE @EXTERNAL XConvertSelection (display: DisplayPtr; 
+	selection,target: Atom;
+	property: Atom;
+	requestor: Window;
+	time: Time);
+ 
+PROCEDURE @EXTERNAL XReparentWindow (display: DisplayPtr;
+	w: Window;
+	parent: Window;
+	x,y: INTEGER);
+ 
+PROCEDURE @EXTERNAL XChangeSaveSet (display: DisplayPtr;
+	w: Window;
+	change_mode: SetmodeMask);
+ 
+PROCEDURE @EXTERNAL XAddToSaveSet (display: DisplayPtr;w: Window);
+ 
+PROCEDURE @EXTERNAL XRemoveFromSaveSet (display: DisplayPtr;w: Window);
+ 
+ 
+PROCEDURE @EXTERNAL XInstallColorMap (display: DisplayPtr;cmap: Colormap): Status;
+ 
+PROCEDURE @EXTERNAL XUninstallColormap (display: DisplayPtr;cmap: Colormap);
+ 
+PROCEDURE @EXTERNAL XListInstalledColormaps (display: DisplayPtr;
+	window: Window; VAR num: INTEGER): ColormapPtr;
+ 
+PROCEDURE @EXTERNAL XGrabButton (display: DisplayPtr;
+	button: ButtonMask;
+	modifiers: INTEGER;
+	grab_window: Window;
+	owner_events: BOOLEAN;
+	event_mask: EventMask;
+	pointer_mode,keyboard_mode: ModeMask;
+	confine_to: Window;
+	cursor: Cursor);
+ 
+PROCEDURE @EXTERNAL XUngrabButton (display: DisplayPtr;
+	button: ButtonMask;
+	modifiers: INTEGER;
+	grab_window: Window);
+ 
+PROCEDURE @EXTERNAL XGrabPointer (display: DisplayPtr;
+	grab_window: Window;
+	owner_events: BOOLEAN;
+	event_mask: EventMask;
+	pointer_mode, keyboard_mode: ModeMask;
+	confine_to: Window;
+	cursor: Cursor;
+	time: Time): Status;
+ 
+PROCEDURE @EXTERNAL XUngrabPointer (display: DisplayPtr; time: Time);
+ 
+PROCEDURE @EXTERNAL XChangeActivePointerGrab (display: DisplayPtr;
+	event_mask: EventMask;
+	cursor: Cursor;
+	time: Time);
+ 
+PROCEDURE @EXTERNAL XRefreshKeyboardMapping (CONST event: XMappingEvent);
+
+PROCEDURE @EXTERNAL XGrabKeyboard (display: DisplayPtr;
+	grab_window: Window;
+	owner_events: BOOLEAN;
+	pointer_mode,keyboard_mode: ModeMask;
+	time: Time): INTEGER;
+ 
+PROCEDURE @EXTERNAL XUngrabKeyboard (display: DisplayPtr; time: Time);
+ 
+PROCEDURE @EXTERNAL XGrabKey (display: DisplayPtr;
+	keycode,modifiers: INTEGER;
+	grab_window: Window;
+	owner_events: BOOLEAN;
+	pointer_mode, keyboard_mode: ModeMask);
+ 
+PROCEDURE @EXTERNAL XUngrabKey (display: DisplayPtr;
+	keycode,modifiers: INTEGER;
+	grab_window: Window);
+ 
+PROCEDURE @EXTERNAL XAllowEvents (display: DisplayPtr;
+	 event_mode: AllowEventsMask;
+	 time: Time);
+ 
+PROCEDURE @EXTERNAL XGarbServer (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XUngrabServer (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XWarpPointer (display: DisplayPtr;
+	src_w,dest_w: Window;
+	src_x, dest_x: INTEGER;
+	src_width, src_height: UNSIGNED;
+	dest_x, dest_y: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetInputFocus (display: DisplayPtr;
+	focus: Window;
+	revert_to: FocusMask;
+	time: Time);
+ 
+PROCEDURE @EXTERNAL XGetInputFocus (display: DisplayPtr;
+	VAR focus: Window;
+	VAR revert_to: FocusMask);
+ 
+PROCEDURE @EXTERNAL XChangePointerControl (display: DisplayPtr;
+	do_accel, do_threshold: BOOLEAN;
+	accel_numerator,accel_denominator, threshold: INTEGER);
+ 
+PROCEDURE @EXTERNAL XGetPointerControl (display: DisplayPtr;
+	VAR accel_numerator,accel_denominator: INTEGER;
+	VAR threshold: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetCloseDownMode (display: DisplayPtr; close_mode: CloseMask);
+ 
+PROCEDURE @EXTERNAL XKillClient (display: DisplayPtr; resource: XID);
+ 
+PROCEDURE @EXTERNAL XSetKeyboardMapping (display: DisplayPtr;
+	CONST map: ARRAY @NOCOUNT OF CHAR;
+	nmap: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XGetKeyboardMapping (display: DisplayPtr;
+	VAR map: ARRAY @NOCOUNT OF CHAR;
+	nmap: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XForceScreenSaver (display: DisplayPtr;
+	mode: ScreenMask);
+ 
+PROCEDURE @EXTERNAL XActivateScreenSaver (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XResetScreenSaver (display: DisplayPtr);
+ 
+ 
+PROCEDURE @EXTERNAL XGetKeyboardControl (display: DisplayPtr;
+	VAR values: XKeyboardState);
+ 
+PROCEDURE @EXTERNAL XAutoRepeatOn (display: DisplayPtr);
+	
+PROCEDURE @EXTERNAL XAutoRepeatOff (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XSetPointerMapping (display: DisplayPtr;
+		CONST map: ARRAY @NOCOUNT OF CHAR; map: INTEGER): Status;
+ 
+PROCEDURE @EXTERNAL XGetPointerMapping (display: DisplayPtr;
+	VAR map: ARRAY @NOCOUNT OF CHAR;	nmap: INTEGER): Status;
+	
+ 
+ 
+PROCEDURE @EXTERNAL XBell (display: DisplayPtr; percent: INTEGER);
+ 
+PROCEDURE @EXTERNAL XSetScreenSaver (display: DisplayPtr;
+	timeout,interval: INTEGER;
+	prefer_blanking: BlankMask;
+	allow_exposures: ExposeMask);
+ 
+PROCEDURE @EXTERNAL XGetScreenSaver (display: DisplayPtr;
+	VAR timeout, interval: INTEGER;
+	VAR prefer_blanking: BlankMask;
+	VAR allow_exposures: ExposeMask);
+ 
+PROCEDURE @EXTERNAL XAddHost (display: DisplayPtr; CONST host: XHostAddress);
+ 
+PROCEDURE @EXTERNAL XAddHosts (display: DisplayPtr; hosts: XHostList;
+num_host: INTEGER);
+ 
+ 
+PROCEDURE @EXTERNAL XRemoveHost (display: DisplayPtr; CONST host: XHostAddress);
+ 
+PROCEDURE @EXTERNAL XRemoveHosts (display: DisplayPtr;hosts: XHostList;
+num_hosts: INTEGER);
+ 
+ 
+PROCEDURE @EXTERNAL XListHosts (display: DisplayPtr;
+	VAR nhost: INTEGER;
+	VAR state: BOOLEAN): XHostList;
+ 
+PROCEDURE @EXTERNAL XSetAccessControl (display: DisplayPtr; mode: AccessMask);
+ 
+PROCEDURE @EXTERNAL XEnableAccessControl (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XDisableAccessControl (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XQueryExtension (display: DisplayPtr;
+	CONST extension_name: ARRAY @NOCOUNT OF CHAR;
+	VAR major_opcode, first_event,first_error: INTEGER): BOOLEAN;
+ 
+PROCEDURE @EXTERNAL XListExtensions (display: DisplayPtr;
+    VAR extension_names: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XSelectInput (display: DisplayPtr;
+	w: Window;
+	event_mask: EventMask);
+ 
+PROCEDURE @EXTERNAL XFlush (display: DisplayPtr);
+ 
+PROCEDURE @EXTERNAL XSync (display: DisplayPtr;discard: BOOLEAN);
+ 
+PROCEDURE @EXTERNAL XPending (display: DisplayPtr): INTEGER;
+
+PROCEDURE @EXTERNAL XEventsQueued (display: DisplayPtr; mode: XQueueMode): INTEGER;
+ 
+PROCEDURE @EXTERNAL XNextEvent (display: DisplayPtr;VAR rep: XEvent);
+ 
+PROCEDURE @EXTERNAL XPeekEvent (display: DisplayPtr;VAR rep: XEvent);
+ 
+PROCEDURE @EXTERNAL XPutBackEvent (display: DisplayPtr;CONST event: XEvent);
+ 
+TYPE pfunc = PROCEDURE (DisplayPtr, VAR XEvent, VAR ARRAY OF CHAR): BOOLEAN;
+ 
+PROCEDURE @EXTERNAL XIfEvent (display: DisplayPtr;
+	VAR event: XEvent;
+	predicate: pfunc;
+	CONST args: ARRAY @NOCOUNT OF CHAR);
+ 
+ 
+PROCEDURE @EXTERNAL XCheckIfEvent (display: DisplayPtr;
+	VAR event: XEvent;
+	predicate: pfunc;
+	CONST args: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XPeekIfEvent (display: DisplayPtr;
+	VAR event: XEvent;
+	predicate: pfunc;
+	CONST args: ARRAY @NOCOUNT OF CHAR);
+ 
+ 
+PROCEDURE @EXTERNAL XWindowEvent (display: DisplayPtr;
+	w: Window;
+	event_mask: EventMask;
+	VAR rep: XEvent);
+ 
+PROCEDURE @EXTERNAL XCheckWindowEvent (display: DisplayPtr;
+	w: Window;
+	event_mask: EventMask;
+	VAR event: XEvent): INTEGER;
+ 
+PROCEDURE @EXTERNAL XMaskEvent (display: DisplayPtr;
+	event_mask: EventMask;
+	VAR rep: XEvent);
+ 
+PROCEDURE @EXTERNAL XCheckMaskEvent (display: DisplayPtr;
+	mask: EventMask;
+	VAR rep: XEvent): INTEGER;
+ 
+PROCEDURE @EXTERNAL XGetMotionEvents (display: DisplayPtr;
+	w: Window;
+	start,stop: Time;
+	VAR nevents: INTEGER): XTimeCoordPtr;
+ 
+PROCEDURE @EXTERNAL XSendEvent (display: DisplayPtr;
+	w: Window;
+	propagate: BOOLEAN;
+	event_mask: EventMask;
+	CONST event: XEvent);
+ 
+PROCEDURE @EXTERNAL XQueryKeymap (display: DisplayPtr;
+	VAR keys: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XLookupMapping (
+	CONST event: XKeyPressedEvent;
+	VAR nbytes: INTEGER;
+	CONST status: XComposeStatus): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XRebindCode (keycode: INTEGER;
+	shiftbits: INTEGER;
+	CONST str: ARRAY @NOCOUNT OF CHAR;
+	nbytes: INTEGER);
+ 
+PROCEDURE @EXTERNAL XUseKeymap (CONST filename: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XCreateAssocTable (display: DisplayPtr;
+        size: INTEGER): XAssocTablePtr;
+ 
+PROCEDURE @EXTERNAL XMakeAssoc (display: DisplayPtr;
+	CONST table: XAssocTable;
+	x_id: UNSIGNED;
+	CONST data: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XLookUpAssoc (display: DisplayPtr;
+	CONST table: XAssocTable;
+	x_id: XID): CharArrayPtr;
+ 
+PROCEDURE @EXTERNAL XDeleteAssoc (display: DisplayPtr;
+	CONST table: XAssocTable;
+	x_id: UNSIGNED);
+ 
+PROCEDURE @EXTERNAL XDestroyAssocTable (display: DisplayPtr;CONST table: XAssocTable);
+ 
+PROCEDURE @EXTERNAL XGetVisualInfo (display: DisplayPtr;
+	vinfo_mask: VisualMask;
+	CONST vinfo_template: XVisualInfo;
+	VAR nitems: INTEGER): XVisualInfoPtr;
+ 
+PROCEDURE @EXTERNAL XMatchVisualInfo (display: DisplayPtr;
+	screen,depth: INTEGER;
+	class: ScreenMask;
+	VAR info: XVisualInfo): Status;
+ 
+ 
+TYPE ErrProc = PROCEDURE (DisplayPtr, CONST XErrorEvent): INTEGER;
+ 
+PROCEDURE @EXTERNAL XSynchronize (display: DisplayPtr; onoff: BOOLEAN): INTEGER;
+ 
+PROCEDURE @EXTERNAL XSyncHandler (display: DisplayPtr; func: IntProc): IntProc;
+ 
+PROCEDURE @EXTERNAL XSetErrorHandler (handler: ErrProc);
+ 
+PROCEDURE @EXTERNAL XGetErrorText (display: DisplayPtr;	code: INTEGER);
+ 
+PROCEDURE @EXTERNAL XDisplayName (CONST string: ARRAY @NOCOUNT OF CHAR);
+ 
+PROCEDURE @EXTERNAL XSetIOErrorHandler (handler: ErrProc);
+ 
+ (* Resource Manager in Xlib routines *)
+ 
+PROCEDURE @EXTERNAL XrmAtomToQuark (name: XrmAtom): XrmQuark;
+ 
+PROCEDURE @EXTERNAL XrmUniqueQuark (): XrmQuark;
+	
+PROCEDURE @EXTERNAL XrmQuarkToAtom (name: XrmQuark): XrmAtom;
+ 
+PROCEDURE @EXTERNAL XrmStringToQuarkList (CONST name: ARRAY @NOCOUNT OF CHAR; quarks: XrmQuarkList);
+ 
+PROCEDURE @EXTERNAL XrmNewQuarkList (): XrmQuarkList;
+ 
+PROCEDURE @EXTERNAL XrmFreeQuarkList (list: XrmQuarkList);
+ 
+PROCEDURE @EXTERNAL XrmQuarkListLength (list: XrmQuarkList): INTEGER;
+ 
+PROCEDURE @EXTERNAL XrmCopyQuarkList (list: XrmQuarkList): XrmQuarkList;
+ 
+TYPE convert_proc = PROCEDURE (DisplayPtr, XrmValue, VAR XrmValue);
+ 
+PROCEDURE @EXTERNAL XrmRegisterTypeConverter (fromType,toType: XrmAtom;
+	converter: convert_proc);
+ 
+PROCEDURE @EXTERNAL XrmConvert (display: DisplayPtr;
+	fromType: XrmAtom;
+	from_val: XrmValue;
+	toType: XrmAtom;
+	VAR to_val: XrmValue);
+ 
+PROCEDURE @EXTERNAL XrmInitialize ();
+ 
+PROCEDURE @EXTERNAL XrmPutResource (quarks: XrmQuarkList;
+	kind: XrmRepresentation;
+	CONST val: XrmValue);
+	
+PROCEDURE @EXTERNAL XrmGetResource (display: DisplayPtr;
+	names: XrmNameList;
+	classes: XrmClassList;
+	destType: XrmRepresentation;
+	VAR val: XrmValue);
+ 
+PROCEDURE @EXTERNAL XSaveContext (display: DisplayPtr;
+	window: Window;
+	context: XContext;
+	VAR data: ARRAY @NOCOUNT OF CHAR): INTEGER;
+ 
+PROCEDURE @EXTERNAL XFindContext (display: DisplayPtr;
+	window: Window;
+	context: XContext;
+	VAR data: ARRAY @NOCOUNT OF CHAR): INTEGER;
+ 
+PROCEDURE @EXTERNAL XDeleteContext (display: DisplayPtr;
+	window: Window;
+	context: XContext): INTEGER;
+ 
+ 
+PROCEDURE @EXTERNAL XrmGetSearchList (names: XrmNameList;
+	classes: XrmClassList;
+	VAR searchList: XrmSearchList);
+ 
+PROCEDURE @EXTERNAL XrmGetSearchResource (display: DisplayPtr;
+	CONST searchList: XrmSearchList;
+	name: XrmName;
+	class: XrmClass;
+	kind: XrmAtom;
+	VAR pVal: XrmValue);
+ 
+PROCEDURE @EXTERNAL XrmSetCurrentDataBase (CONST db: XrmResourceDataBase);
+ 
+PROCEDURE @EXTERNAL XrmGetCurrentDataBase (VAR db: XrmResourceDataBase);
+ 
+PROCEDURE @EXTERNAL XrmGetDataBase (magicCookie: INTEGER; VAR db: 
+XrmResourceDataBase);
+ 
+PROCEDURE @EXTERNAL XrmPutDataBase (magicCookie: INTEGER; CONST
+db: XrmResourceDataBase);
+ 
+PROCEDURE @EXTERNAL XrmMergeDataBases (CONST newdb: XrmResourceDataBase; 
+	VAR intodb: XrmResourceDataBase);
+ 
+PROCEDURE @EXTERNAL XrmParseCommand (table: XrmOptionDescList;
+	tableCount: INTEGER;
+	prependName: XrmAtom;
+	VAR argc: INTEGER;
+	VAR argv: ARRAY @NOCOUNT OF CHAR);
+	
+ 
+ (* $Header: x.def,v 1.4 88/12/12 11:38:51 dion Exp $ *)
+CONST
+    XC_num_glyphs = 154;
+    XC_X_cursor = 0;
+    XC_arrow = 2;
+    XC_based_arrow_down = 4;
+    XC_based_arrow_up = 6;
+    XC_boat = 8;
+    XC_bogosity = 10;
+    XC_bottom_left_corner = 12;
+    XC_bottom_right_corner = 14;
+    XC_bottom_side = 16;
+    XC_bottom_tee = 18;
+    XC_box_spiral = 20;
+    XC_center_ptr = 22;
+    XC_circle = 24;
+    XC_clock = 26;
+    XC_coffee_mug = 28;
+    XC_cross = 30;
+    XC_cross_reverse = 32;
+    XC_crosshair = 34;
+    XC_diamond_cross = 36;
+    XC_dot = 38;
+    XC_dotbox = 40;
+    XC_double_arrow = 42;
+    XC_draft_large = 44;
+    XC_draft_small = 46;
+    XC_draped_box = 48;
+    XC_exchange = 50;
+    XC_fleur = 52;
+    XC_gobbler = 54;
+    XC_gumby = 56;
+    XC_hand1 = 58;
+    XC_hand2 = 60;
+    XC_heart = 62;
+    XC_icon = 64;
+    XC_iron_cross = 66;
+    XC_left_ptr = 68;
+    XC_left_side = 70;
+    XC_left_tee = 72;
+    XC_leftbutton = 74;
+    XC_ll_angle = 76;
+    XC_lr_angle = 78;
+    XC_man = 80;
+    XC_middlebutton = 82;
+    XC_mouse = 84;
+    XC_pencil = 86;
+    XC_pirate = 88;
+    XC_plus = 90;
+    XC_question_arrow = 92;
+    XC_right_ptr = 94;
+    XC_right_side = 96;
+    XC_right_tee = 98;
+    XC_rightbutton = 100;
+    XC_rtl_logo = 102;
+    XC_sailboat = 104;
+    XC_sb_down_arrow = 106;
+    XC_sb_h_double_arrow = 108;
+    XC_sb_left_arrow = 110;
+    XC_sb_right_arrow = 112;
+    XC_sb_up_arrow = 114;
+    XC_sb_v_double_arrow = 116;
+    XC_shuttle = 118;
+    XC_sizing = 120;
+    XC_spider = 122;
+    XC_spraycan = 124;
+    XC_star = 126;
+    XC_target = 128;
+    XC_tcross = 130;
+    XC_top_left_arrow = 132;
+    XC_top_left_corner = 134;
+    XC_top_right_corner = 136;
+    XC_top_side = 138;
+    XC_top_tee = 140;
+    XC_trek = 142;
+    XC_ul_angle = 144;
+    XC_umbrella = 146;
+    XC_ur_angle = 148;
+    XC_watch = 150;
+    XC_xterm = 152;
+ 
+ 
+END x.

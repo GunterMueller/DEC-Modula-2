@@ -1,0 +1,4 @@
+$8 == "symbolic"   {print $7; next}
+$9 == "symbolic"   {print $8; next}
+$2 == "0"	   {next}
+       		   {print $NF}

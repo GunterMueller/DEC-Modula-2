@@ -1,0 +1,4 @@
+pat=$1
+shift
+ngrep "$pat" $@ *.def *.mod
+echo

@@ -1,0 +1,93 @@
+(* $Header: unix.def,v 1.1 89/12/04 15:56:35 lattanzi Locked $ *)
+DEFINITION MODULE unix @NOINIT;
+FROM SYSTEM IMPORT ADDRESS, BYTE;
+IMPORT IO;
+EXPORT *;
+
+TYPE
+    CString = ARRAY @NOCOUNT OF CHAR;
+    CBuffer = ARRAY @NOCOUNT OF BYTE;
+    CStringPointer = @DYNARRAY @NOCHECK @NOCOUNT OF CHAR;
+    CParamPointer = @DYNARRAY @NOCHECK @NOCOUNT OF CStringPointer;
+    File = IO.FILE;
+CONST
+    OPENREADONLY = 0;
+    OPENWRITEONLY = 1;
+    OPENREADWRITE = 2;
+    OPENNONBLOCKING = 4;
+    OPENAPPEND = 8;
+    OPENCREATE = 1000B;
+    OPENTRUNCATE = 2000B;
+    OPENEXCLUSIVE = 4000B;
+VAR
+    argc : CARDINAL;
+    argv : CParamPointer;
+
+    (* shared variables with Unix *)
+    @EXTERNAL errno : INTEGER;
+    @EXTERNAL environ : ADDRESS;
+
+    stdin, stdout, stderr : File;
+
+(* UNIX I/O SYSTEM CALLS *)
+
+PROCEDURE @EXTERNAL chmod(CONST name : CString; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL close(fildes : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL creat(CONST name : CString; mode : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL dup(fildes : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL dup2(fildes1, fildes2 : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL uexit(exitCode : INTEGER);
+PROCEDURE @EXTERNAL fstat(fildes : INTEGER; VAR buf : CBuffer) : INTEGER;
+PROCEDURE @EXTERNAL fchmod(fildes : INTEGER; mode : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL link(CONST name1, name2 : CString) : INTEGER;
+PROCEDURE @EXTERNAL lseek(fildes : INTEGER; offset : INTEGER; whence : CARDINAL)
+	: INTEGER;
+PROCEDURE @EXTERNAL open(CONST name : CString; flags : cardinal; mode : CARDINAL)
+	: INTEGER;
+PROCEDURE @EXTERNAL read(fildes : INTEGER; VAR buffer : CBuffer; nbytes : CARDINAL)
+	: INTEGER;
+PROCEDURE @EXTERNAL sbrk(incr : INTEGER) : ADDRESS;
+PROCEDURE @EXTERNAL select (numfds : CARDINAL;
+	VAR readfds, writefds, exceptfds : BITSET; timeout : ADDRESS) : INTEGER;
+PROCEDURE @EXTERNAL stat(CONST name : CString; VAR buf : CBuffer) : INTEGER;
+PROCEDURE @EXTERNAL umask(mask : BITSET) : INTEGER;
+PROCEDURE @EXTERNAL unlink(CONST name : CString) : INTEGER;
+PROCEDURE @EXTERNAL write(fildes : INTEGER; CONST buffer : CBuffer; nbytes : CARDINAL)
+	: INTEGER;
+
+(* UNIX PROCESS SYSTEM CALLS *)
+
+PROCEDURE @EXTERNAL getpid() : INTEGER;
+PROCEDURE @EXTERNAL exec(CONST name : CString; CONST argv : CParamPointer) : INTEGER;
+PROCEDURE @EXTERNAL execv(CONST name : CString; CONST argv : CParamPointer) : INTEGER;
+PROCEDURE @EXTERNAL execve(CONST name : CString; CONST argv, envp : CParamPointer)
+	: INTEGER;
+PROCEDURE @EXTERNAL fork() : INTEGER;
+PROCEDURE @EXTERNAL vfork() : INTEGER;
+PROCEDURE @EXTERNAL kill(process : INTEGER; signal : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL wait(VAR status : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL abort();
+PROCEDURE @EXTERNAL sleep(second : CARDINAL);
+
+(* UNIX LIBRARY ROUTINES *)
+
+PROCEDURE @EXTERNAL getenv(CONST name : CString) : CStringPointer;
+PROCEDURE @EXTERNAL perror(CONST msg : CString);
+PROCEDURE @EXTERNAL fopen(CONST name : CString; CONST mode : CString) : File;
+PROCEDURE @EXTERNAL fclose(file : File);
+PROCEDURE @EXTERNAL fflush(file : File);
+PROCEDURE @EXTERNAL fseek(file : File; offset, relative : INTEGER) : INTEGER;
+PROCEDURE @EXTERNAL fgetc(file : File) : CHAR;
+PROCEDURE @EXTERNAL fputc(c : CHAR; file : File);
+PROCEDURE @EXTERNAL ungetc(c : CHAR; file : File);
+
+PROCEDURE @EXTERNAL gethostname(VAR name : ARRAY OF CHAR) : INTEGER;
+
+PROCEDURE @EXTERNAL ctime(VAR time : INTEGER) : CStringPointer;
+PROCEDURE @EXTERNAL time(VAR time : INTEGER) : INTEGER;
+
+PROCEDURE @EXTERNAL bcopy(b1, b2 : ADDRESS; length : CARDINAL);
+PROCEDURE @EXTERNAL bcmp(b1, b2 : ADDRESS; length : CARDINAL);
+PROCEDURE @EXTERNAL bzero(b1 : ADDRESS; length : CARDINAL);
+
+END unix.

@@ -1,0 +1,275 @@
+;*****************************************************************************
+;									     *
+;              Copyright 1984-1990 Digital Equipment Corporation             *
+;                          All Rights Reserved				     *
+; 								             *
+;  Permission to use, copy, and modify this software and its documentation   *
+;  is hereby granted only under the following terms and conditions.  Both    *
+;  the above copyright notice and this permission notice must appear in all  *
+;  copies of the software, derivative works or modified versions, and any    *
+;  portions thereof, and both notices must appear in supporting              *
+;  documentation.							     *
+; 									     *
+;  Users of this software agree to the terms and conditions set forth        *
+;  herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+;  royalty-free right and license under any changes, enhancements or         *
+;  extensions made to the core functions of the software, including but not  *
+;  limited to those affording compatibility with other hardware or software  *
+;  environments, but excluding applications which incorporate this software. *
+;  Users further agree to use their best efforts to return to Digital any    *
+;  such changes, enhancements or extensions that they make and inform        *
+;  Digital of noteworthy uses of this software.  Correspondence should be    *
+;  provided to Digital at:						     *
+;  									     *
+;                        Director of Licensing				     *
+;                        Western Research Laboratory			     *
+;                        Digital Equipment Corporation			     *
+;                        100 Hamilton Avenue				     *
+;                        Palo Alto, California  94301  			     *
+;  									     *
+;  This software may be distributed (but not offered for sale or transferred *
+;  for compensation) to third parties, provided such third parties agree to  *
+;  abide by the terms and conditions of this notice.  			     *
+;  									     *
+;  THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+;  ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+;  WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+;  EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+;  CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+;  USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+;  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+;  PERFORMANCE OF THIS SOFTWARE.				    	     *
+; 									     *
+;*****************************************************************************
+
+	.title	coroutine
+.MACRO	JUMP	J,L
+.ENABLE LOCAL_BLOCK
+	J	1$
+	BRW	L
+1$:
+.DISABLE LOCAL_BLOCK
+.ENDM	JUMP
+
+.MACRO	JBR	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BRB	L
+.IFF
+	BRW	L
+.ENDC
+.IFF
+	BRW	L
+.ENDC
+.ENDM	JBR
+
+.MACRO	JLEQ	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BLEQ	L
+.IFF
+	JUMP	BGTR,L
+.ENDC
+.IFF
+	JUMP	BGTR,L
+.ENDC
+.ENDM	JLEQ
+.MACRO	JLSS	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BLSS	L
+.IFF
+	JUMP	BGEQ,L
+.ENDC
+.IFF
+	JUMP	BGEQ,L
+.ENDC
+.ENDM	JLSS
+.MACRO	JGEQ	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BGEQ	L
+.IFF
+	JUMP	BLSS,L
+.ENDC
+.IFF
+	JUMP	BLSS,L
+.ENDC
+.ENDM	JGEQ
+.MACRO	JGTR	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BGTR	L
+.IFF
+	JUMP	BLEQ,L
+.ENDC
+.IFF
+	JUMP	BLEQ,L
+.ENDC
+.ENDM	JGTR
+.MACRO	JEQL	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BEQL	L
+.IFF
+	JUMP	BNEQ,L
+.ENDC
+.IFF
+	JUMP	BNEQ,L
+.ENDC
+.ENDM	JEQL
+.MACRO	JNEQ	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BNEQ	L
+.IFF
+	JUMP	BEQL,L
+.ENDC
+.IFF
+	JUMP	BEQL,L
+.ENDC
+.ENDM	JNEQ
+
+
+.MACRO	JLEQU	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BLEQU	L
+.IFF
+	JUMP	BGTRU,L
+.ENDC
+.IFF
+	JUMP	BGTRU,L
+.ENDC
+.ENDM	JLEQU
+.MACRO	JLSSU	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BLSSU	L
+.IFF
+	JUMP	BGEQU,L
+.ENDC
+.IFF
+	JUMP	BGEQU,L
+.ENDC
+.ENDM	JLSSU
+.MACRO	JGEQU	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BGEQU	L
+.IFF
+	JUMP	BLSSU,L
+.ENDC
+.IFF
+	JUMP	BLSSU,L
+.ENDC
+.ENDM	JGEQU
+.MACRO	JGTRU	L
+.IF	DEFINED	L
+.IF	LT	.-L-127
+	BGTRU	L
+.IFF
+	JUMP	BLEQU,L
+.ENDC
+.IFF
+	JUMP	BLEQU,L
+.ENDC
+.ENDM	JGTRU
+
+
+.SHOW	ME,MEB,MC,CND,MD
+	.psect	$code,long,pic,nowrt,shr
+	.psect	data,long,noexe
+
+; $Header: coroutine.mar,v 1.1 89/09/12 17:05:21 joel Locked $
+; Modula-2 coroutine implementation subroutines
+; This file is named .c to avoid accidental deletion
+; This was translated from ULTRIX AS to VMS MACRO by CED on 3/21/87.
+
+DISPLAYLEVELS	=  16
+DISPLAYSIZE	=  DISPLAYLEVELS*4
+
+; A "process" is represented by an area defined as follows:
+;   Note:  stack grows downward, so process variable points to end.
+;	Name	Offset	function	
+status	= 	-4	; indicate whether process has started
+entry	= 	-8	; entry point for process
+size	= 	-12	; size of stack area in bytes
+savesp	= 	-16	; saved sp of process
+display	= savesp-DISPLAYSIZE	; saved display
+stack	= 	display	; start of stack area for new process
+MINSTACK	= 512	; at least 512 bytes for a stack
+
+	.psect	data
+; currently running process, initially the main program
+.globl	SYSTEM_currentprocess
+SYSTEM_currentprocess:
+	.long	SYSTEM_currentprocessstate
+	.blkb	DISPLAYSIZE	; display
+	.long	0		; savesp = ?
+	.long	^X7fffffff	; size = large
+	.long	0		; entry = none
+	.long	1		; status = running
+SYSTEM_currentprocessstate:
+.globl	runtime__display
+.psect	$code
+.globl	SYSTEM_newprocess
+SYSTEM_newprocess:
+	.word	0
+	movl	8(ap),r1	; stack area for process
+	movl	12(ap),r2       ; get size to allocate (in bytes)
+	cmpl	r2,#MINSTACK	; make sure it isn't tiny
+	jlss	toosmall
+	addl2	r2,r1		; point to end of stack area
+	clrl	status(r1)	; indicate process not yet started
+	movl	4(ap),entry(r1)	; entry point of process
+	movl	12(ap),size(r1)	; size of stack
+	movl	r1,@16(ap)	; use stack record as process object
+	ret
+toosmall:
+	pushab	toosmallmsg
+	calls	#1,printf
+	calls	#0,abort
+toosmallmsg:.asciz	"NEWPROCESS: stack too small\n"
+
+ALLREGMASK	= 16383	; mask to save r0-fp
+.globl	SYSTEM_transfer
+SYSTEM_transfer:
+	.word	0
+	pushr	#ALLREGMASK
+	movl	SYSTEM_currentprocess,r6	; get current process
+	movl	@8(ap),r7	; process to switch to (var parameter!)
+	movl	sp,savesp(r6)	; save stack pointer for old process
+	subl3	sp,r6,r0	; amount of stack used
+	cmpl	r0,size(r6)	; check to be sure not too much
+	jgeq	overflow	; overflowed stack
+	movc3	#DISPLAYSIZE,runtime__display,display(r6) ; save display
+	movl	r6,@4(ap)	; return pointer to old process
+	movl	r7,SYSTEM_currentprocess	; new process to run
+
+	tstl	status(r7)	; has new process been run before?
+	jeql	firsttime	; no, start it
+
+	; run new process
+	movl	savesp(r7),sp	; restore stack pointer
+	movc3	#DISPLAYSIZE,display(r7),runtime__display ; restore display
+	popr	#ALLREGMASK
+	ret
+firsttime:
+	; start process at procedure
+	movl	#1,status(r7)	; indicate running
+	movl	entry(r7),r8	; get starting address
+	movab	stack(r7),fp	; set frame pointer
+	movl	fp,sp		;  and stack pointer
+	calls	#0,(r8)		; enter procedure
+;  will return here if procedure terminates.  terminate whole program
+	clrl	r0
+	.globl	exit
+	calls	#0,exit
+
+overflow:
+	pushab	overflowmsg
+	calls	#1,printf
+	calls	#0,abort
+overflowmsg:.asciz	"TRANSFER: stack overflowed\n"
+	.end

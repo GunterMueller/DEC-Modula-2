@@ -1,0 +1,140 @@
+Definition module CheckExpr;
+
+(*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************)
+
+
+from Machine import
+    HugeInteger;
+
+from Tokens import
+    Token;
+
+from Strings import
+    String;
+
+from Symbols import
+    EvalMode, ExprNode, ConstNode, TypeNode, ExprList, CheckKind, VarNode,
+    VariantNode, StmtNode, MemoryOffset;
+$if pascal then
+from Symbols import
+    ProcNode;
+$end
+
+procedure IsBadExpr(en : ExprNode) : boolean; 
+
+procedure AssignExprNode(toen, fromen : ExprNode); 
+
+procedure IsAddressableExpr(en : ExprNode) : boolean;
+
+procedure IsAddressableType(tn : TypeNode) : boolean; 
+
+procedure ConstType(cn : ConstNode) : TypeNode; 
+
+procedure CheckFuncProc(const stn          : StmtNode;
+			const procValExpr  : ExprNode;
+			const procNameExpr : ExprNode;
+			var   params       : ExprList; 
+			var   retType      : TypeNode; 
+			const mode         : EvalMode) : boolean;
+
+procedure CheckBadParams(const params : ExprList);
+
+procedure CheckExpr(en : ExprNode; mode : EvalMode) : TypeNode; 
+
+procedure CheckExprFunction(en : ExprNode; mode : EvalMode) : TypeNode; 
+
+procedure CheckExprType(en : ExprNode; mode : EvalMode) : TypeNode; 
+
+procedure ValueOrAddr(en : ExprNode; tn : TypeNode; mode : EvalMode);
+	
+procedure RefOpenArray(en : ExprNode; tn : TypeNode); 
+
+procedure MakeExprVar(vn : VarNode; infoen : ExprNode) : ExprNode;
+
+procedure MakeExprVal(tn : TypeNode; addr : ExprNode) : ExprNode; 
+
+(* grammar+ *) procedure @external MakeExprConst(
+	tn : TypeNode; value : HugeInteger) : ExprNode; 
+
+procedure MakeExprConstString(string : String) : ExprNode;
+
+procedure MakeExprBinOp(tn : TypeNode; oper : Token; opnd1, opnd2 : ExprNode)
+	: ExprNode; 
+
+procedure MakeExprBinChain(tn : TypeNode; oper : Token; opnd1, opnd2 : ExprNode)
+	: ExprNode; 
+
+procedure MakeExprOffset(const tn    : TypeNode;
+			 const oper  : Token;
+			 const opnd1 : ExprNode;
+			 const value : HugeInteger) : ExprNode;
+
+procedure EvalConstExprBinOp(en : ExprNode);
+
+procedure MakeExprCheck(checkExpr : ExprNode; kind : CheckKind;
+    arrVar, checkVar : VarNode; tn : TypeNode;
+    lowerBound, upperBound : integer; checkVariant : VariantNode) : ExprNode;
+    
+procedure MakeExprSave(saved : ExprNode; vn : VarNode) : ExprNode;
+
+procedure ScaleBySize(en : ExprNode; size, unit : MemoryOffset) : ExprNode;
+
+procedure BadExpr(en : ExprNode);
+
+$if pascal then
+procedure CheckExprWithSubExprs(en : ExprNode; mode : EvalMode) : TypeNode; 
+
+procedure MakeExprProc(const pn : ProcNode; const infoen : ExprNode) : ExprNode;
+
+procedure MakeExprFunc(const proc    : ProcNode;
+		       const infoen  : ExprNode;
+		       const params  : ExprList;
+		       const retType : TypeNode) : ExprNode;
+
+procedure SetSetType(en : ExprNode; var setType : TypeNode);
+
+procedure IntegerToReal(en : ExprNode);
+$end
+end CheckExpr.

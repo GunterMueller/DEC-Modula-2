@@ -1,0 +1,1392 @@
+/*****************************************************************************
+ *									     *
+ *             Copyright 1984-1990 Digital Equipment Corporation             *
+ *                         All Rights Reserved				     *
+ *								             *
+ * Permission to use, copy, and modify this software and its documentation   *
+ * is hereby granted only under the following terms and conditions.  Both    *
+ * the above copyright notice and this permission notice must appear in all  *
+ * copies of the software, derivative works or modified versions, and any    *
+ * portions thereof, and both notices must appear in supporting              *
+ * documentation.							     *
+ *									     *
+ * Users of this software agree to the terms and conditions set forth        *
+ * herein, and hereby grant back to Digital a non-exclusive, unrestricted,   *
+ * royalty-free right and license under any changes, enhancements or         *
+ * extensions made to the core functions of the software, including but not  *
+ * limited to those affording compatibility with other hardware or software  *
+ * environments, but excluding applications which incorporate this software. *
+ * Users further agree to use their best efforts to return to Digital any    *
+ * such changes, enhancements or extensions that they make and inform        *
+ * Digital of noteworthy uses of this software.  Correspondence should be    *
+ * provided to Digital at:						     *
+ * 									     *
+ *                       Director of Licensing				     *
+ *                       Western Research Laboratory			     *
+ *                       Digital Equipment Corporation			     *
+ *                       100 Hamilton Avenue				     *
+ *                       Palo Alto, California  94301  			     *
+ * 									     *
+ * This software may be distributed (but not offered for sale or transferred *
+ * for compensation) to third parties, provided such third parties agree to  *
+ * abide by the terms and conditions of this notice.  			     *
+ * 									     *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS    *
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED        *
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL    *
+ * EQUIPMENT CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR     *
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF    *
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR     *
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR    *
+ * PERFORMANCE OF THIS SOFTWARE.				    	     *
+ *									     *
+ *****************************************************************************/
+
+/* grammar for MODULA-2 for input to yacc */
+
+/* basic tokens */
+
+%token ENDOFFILE	0
+%token PLUS		1	
+%token MINUS		2	
+%token ASTERISK		3	
+%token SLASH		4	
+%token ASSIGN		5	
+%token AMPERSAND	6	
+%token DOT		7	
+%token COMMA		8	
+%token SEMICOLON	9	
+%token LPAREN		10	
+%token LBRACKET		11	
+%token LBRACE		12	
+%token UPARROW		13	
+%token EQUALS		14	
+%token SHARP		15	
+%token LESS		16	
+%token GREATER		17	
+%token NOTEQUAL		18	
+%token LSEQUAL		19	
+%token GREQUAL		20	
+%token DOTDOT		21	
+%token COLON		22	
+%token RPAREN		23	
+%token RBRACKET		24	
+%token RBRACE		25	
+%token BAR		26	
+%token IDENT		27	
+%token CARDCONST	28	
+%token REALCONST	29	
+%token CHARCONST	30	
+%token STRCONST		31	
+%token UNUSEDXXX1	32	
+
+/* reserved words */
+
+%token AND		33	
+%token ARRAY		34	
+%token BEGIN		35	
+%token BY		36	
+%token CASE		37	
+%token CONST		38	
+%token DEFINITION	39	
+%token DIV		40	
+%token DO		41	
+%token ELSE		42	
+%token ELSIF		43	
+%token END		44	
+%token EXIT		45	
+%token EXPORT		46	
+%token FOR		47	
+%token FROM		48	
+%token IF		49	
+%token IMPLEMENTATION	50	
+%token IMPORT		51	
+%token IN		52	
+%token LOOP		53	
+%token MOD		54	
+%token MODULE		55	
+%token NOT		56	
+%token OF		57	
+%token OR		58	
+%token POINTER		59	
+%token PROCEDURE	60	
+%token QUALIFIED	61	
+%token RECORD		62	
+%token REPEAT		63	
+%token RETURN		64	
+%token SET		65	
+%token THEN		66	
+%token TO		67	
+%token TYPE		68	
+%token UNTIL		69	
+%token VAR		70	
+%token WHILE		71	
+%token WITH		72	
+
+/* special tokens for non-standard extensions */
+%token ATSIZE		73
+%token ATALIGN		74
+%token ATPASCAL		75
+%token ATC		76
+%token ATNOCHECK	77
+%token ATNILCHECK	78
+%token ATUNUSEDxxx3	79
+%token ATNOCOUNT	80
+%token ATEXTERNAL	81
+%token ATGLOBAL		82
+%token ATASM		83
+%token ATDYNARRAY	84
+%token ATSUBARRAY	85
+%token ATLOCAL		86
+%token ATLEFTTORIGHT	87
+%token ATRIGHTTOLEFT	88
+%token ATUNUSEDxxx4	89
+%token ATINLINE		90
+%token ATSHARED		91
+%token ATNOINIT		92
+
+
+%token DOWNTO		93
+%token TKFILE		94
+%token FORWARD		95
+%token FUNCTION		96
+%token GOTO		97
+%token LABEL		98
+%token PACKED		99
+%token PROGRAM		100
+%token OCT		101
+%token HEX		102
+
+%token ENDOFLINE	103
+%token TKSMALLIDENT	104
+%token TKSMALLSTRCONST	105
+%token NADA		106
+
+/* establish operator associativity and precedence 		*/
+/* lower precedence are listed first (equal on same line) 	*/
+/* logical operators at wrong precedence, but all misbindings	*/
+/*     violate type-checking in CheckExpr			*/
+%left	EQUALS SHARP NOTEQUAL LESS LSEQUAL GREATER GREQUAL IN
+%left	PLUS MINUS
+%left	ASTERISK SLASH DIV MOD
+%right	OR
+%right	AND AMPERSAND
+
+%{
+#include <stdio.h>
+#define YYMAXDEPTH	500
+/* standard type pointers, globally defined in symtab */
+#ifdef vms
+globalref int anyTypeNode, procTypeNode;
+#else unix
+extern int anyTypeNode, procTypeNode;
+#endif
+static int temp;
+
+extern Errors_Error();
+yyerror(s) char *s; {
+    Errors_Error((int *) s, 1023);
+}
+%}
+
+%start CompilationUnit
+
+%%
+
+/************************************************************************/
+/* Note:								*/
+/* 	An action of 							*/
+		     /**/
+/* 			  means nothing needs to be done.		*/
+/* 	An action of							*/
+		     /*=*/
+/* 			   means the default is used, i.e., $$ = $1	*/
+/************************************************************************/
+
+
+CompilationUnit:
+		ProgramModule
+	|	ImplementationModule
+	|	error
+				{ printf("Fatal error, cannot proceed\n");
+				    exit(1); }
+	;
+
+
+
+
+ProgramModule:
+		MODULE IDENT priority { $$ = DefineModule($2,MODULE); }
+		    moduleOptions semicolon seqImport block ENDident
+		    moduleDOT { EndModule($4,$8,$9); } EndOfFile
+	|	MODULE IDENT priority { $$ = DefineModule($2,MODULE); }
+		    error ENDident moduleDOT 
+				{ EndModule($4,0,$6); } EndOfFile
+	;
+
+EndOfFile:
+		ENDOFFILE { EndFile(); }
+	|	error
+		{ yyerror("Junk after end of module");
+		  EndFile(); 
+		  yychar = ENDOFFILE; }
+	;
+
+ImplementationModule:
+		IMPLEMENTATION MODULE IDENT priority
+		    { $$ = DefineModule($3,IMPLEMENTATION); }
+		    moduleOptions semicolon { GetDefinitionModule($5);}
+		    ImplDefinitionModule
+		    seqImport block ENDident moduleDOT
+			{ EndModule($5,$11,$12); } EndOfFile 
+	;
+
+ScanImplementationModule:
+                IMPLEMENTATION MODULE IDENT priority
+                    { $$ = ContinueModule($3); }
+                    moduleOptions semicolon seqImport
+                    block ENDident moduleDOT
+		    { DisContinueModule($5,$9,$10); } EndOfFile
+        ;
+
+ImplDefinitionModule:
+		DEFINITION MODULE IDENT moduleOptions
+		    semicolon seqImport export seqDefinition ENDident
+		    moduleDOT { EndImplDef($9); } EndOfFile
+				/* Note: no special processing */
+	;
+
+DefinitionModule:
+		DEFINITION MODULE IDENT { $$ = DefineModule($3,DEFINITION); }
+		    moduleOptions semicolon seqImport export seqDefinition 
+		    ENDident moduleDOT { EndModule($4,0,$10); } EndOfFile
+		    { GetInlineImpl($4) ; }
+	|	DEFINITION MODULE IDENT { $$ = DefineModule($3,DEFINITION); }
+		    error ENDident moduleDOT { EndModule($4,0,$6); }
+		    EndOfFile { GetInlineImpl($4); }
+	;
+
+definition:
+		CONST seqConstantDeclaration
+				/**/
+	|	TYPE seqTypeDeclaration
+				/**/
+	|	VAR seqVariableDeclaration
+				/**/
+	|	ProcedureHeading
+				{ EndProc($1,0,0); }
+	;
+
+seqDefinition:
+		/* empty */
+				/**/
+	|	seqDefinition definition
+				/**/
+	;
+
+import:
+		IMPORT IdentList semicolon
+				{ $$ = ImportDecl(0,$2); }
+	|	FROM IDENT IMPORT IdentList semicolon	
+				{ $$ = ImportDecl($2,$4); }
+	|	FROM IDENT IMPORT ASTERISK semicolon
+				{ $$ = ImportDecl($2,0); }
+	;
+
+importAndDef:
+		import
+				{ $$ = ReadImport($1); }
+	|	importAndDef DefinitionModule
+				{ $$ = ReadImport($1); }
+				/* import module1, module2 */
+	|	importAndDef DefinitionModule ScanImplementationModule
+				{ $$ = ReadImport($1); }
+				/* imports of @inline procs */
+	;
+
+seqImport:
+		/* empty */
+				/**/
+	|	seqImport importAndDef
+				{ ProcessImport($2,0); }
+	;
+
+export:
+		EXPORT IdentList semicolon
+				{ ExportDecl($2,EXPORT); }
+	|	EXPORT QUALIFIED IdentList semicolon
+				{ ExportDecl($3,QUALIFIED); }
+	|	EXPORT ASTERISK semicolon
+				{ ExportAll(); }
+        |	/* empty */
+				{ ExportMissing(); }
+	;
+
+priority:
+		/* empty */
+				/**/
+	|	LBRACKET ConstExpression RBRACKET
+				{ $$ = $2; }
+	;
+
+moduleOptions:
+		/* empty */
+				/**/
+	|	ATNOINIT
+				{ SetNoInit(); }
+	;
+
+ModuleDeclaration:
+		MODULE IDENT priority { $$ = DefineModule($2,MODULE); }
+		    moduleOptions semicolon seqImport export block ENDident
+		    semicolon
+				{ EndModule($4,$9,$10); }
+	|	MODULE IDENT priority { $$ = DefineModule($2,MODULE); }
+		    error ENDident semicolon
+				{ EndModule($4,0,$6); }
+	;
+
+FormalType:
+		qualident
+				{ $$ = TypeOf($1); }
+	|	array OF FormalType
+				{ $$ = ArrayType(0,$3,$1,0); }
+	|	array ATNOCOUNT OF FormalType
+				{ $$ = ArrayType(0,$4,$1,ATNOCOUNT); }
+	;
+
+FPSection:
+		IdentList COLON FormalType
+				{ $$ = MakeParamList(0,$1,$3); }
+	|	VAR IdentList COLON FormalType
+				{ $$ = MakeParamList(VAR,$2,$4); }
+	|	CONST IdentList COLON FormalType
+				{ $$ = MakeParamList(CONST,$2,$4); }
+				/* Constant params extension */
+	|	error
+				{ $$ = MakeParamList(0,0,anyTypeNode); }
+	;
+
+FormalParameters:
+		LPAREN RPAREN
+				{ $$ = 0; }
+	|	LPAREN seqFPSection RPAREN
+				{ $$ = $2; }
+	;
+
+ReturnType:
+		/*empty*/
+				{ $$ = 0; }
+	|	COLON qualident
+				{ $$ = TypeOf($2); }
+	;
+
+
+seqFPSection:
+		FPSection
+			/*=*/
+	|	seqFPSection semicolon FPSection
+			{ $$ = AppendParamList($1,$3); }
+	|	seqFPSection COMMA
+	          	{ yyerror("Must use ';' rather than ','"); }
+		 FPSection
+		 	{ $$ = AppendParamList($1,$4); }
+	;
+
+declaration:
+		CONST seqConstantDeclaration
+				/**/
+	|	TYPE seqTypeDeclaration
+				/**/
+	|	VAR seqVariableDeclaration
+				/**/
+	|	ProcedureDeclaration
+				/**/
+	|	ModuleDeclaration
+				/**/
+	;
+
+seqDeclaration:
+		/* empty */
+				/**/
+	|	seqDeclaration declaration
+				/**/
+	;
+
+block:
+		seqDeclaration
+				{ $$ = AddToStmtList(0,0); }
+	|	seqDeclaration BEGIN StatementSequence
+				{ $$ = $3; }
+	;
+
+
+ProcedureName:
+		PROCEDURE IDENT
+				{ $$ = DefineProc($2,PROCEDURE); }
+	|	PROCEDURE IDENT STRCONST
+				{ temp = DefineProc($2,PROCEDURE);
+                                    SetGlobalProcName(temp,$3); $$ = temp;}
+	|	PROCEDURE ATEXTERNAL IDENT
+				{ $$ = DefineProc($3,ATEXTERNAL); }
+	|	PROCEDURE ATGLOBAL IDENT
+				{ $$ = DefineProc($3,ATGLOBAL); }
+	|	PROCEDURE ATINLINE IDENT
+				{ $$ = DefineProc($3,ATINLINE); }
+	|	PROCEDURE ATASM IDENT
+				{ $$ = DefineProc($3,ATASM); }
+	;
+
+ProcedureHeading:
+		ProcedureName SEMICOLON
+				{ $$ = AddTypeToProc($1,procTypeNode); }
+	|	ProcedureName FormalParameters ReturnType SEMICOLON
+				{ temp = ProcType($2,$3);
+				    $$ = AddTypeToProc($1,temp); }
+	;
+
+ProcedureDeclaration:
+		ProcedureHeading block ENDident SEMICOLON
+				{ EndProc($1,$2,$3); }
+	|	ProcedureHeading error 
+				{ EndProc($1,0,0); }
+	;
+
+do:
+		DO
+				/**/
+	|	THEN
+				{ yyerror("Use DO instead of THEN"); }
+	;
+
+WithStatement:
+		WITH designator do StatementSequence END
+				{ $$ = BuildStmtWith($2,$4); }
+	;
+
+LoopStatement:
+		LOOP { $$ = StartStmtLoop(); } StatementSequence END
+				{ $$ = BuildStmtLoop($2,$3); }
+	;
+
+assign:
+		ASSIGN
+			/**/
+	|	EQUALS
+			{ yyerror("Use ':=' instead of '=' for assignment"); }
+	|	COLON EQUALS
+			{ yyerror("':=' cannot have imbedded spaces"); }
+	;
+
+ForStatement:
+	    	FOR IDENT assign expressionError TO expressionError
+		do StatementSequence END
+				{ $$ = BuildStmtFor($2,$4,$6,0,$8); }
+	|   	FOR IDENT assign expressionError TO expressionError 
+		BY expressionError do StatementSequence END
+				{ $$ = BuildStmtFor($2,$4,$6,$8,$10); }
+	;
+
+RepeatStatement:
+		REPEAT { $$ = StartStmtRepeat(); }
+		StatementSequence UNTIL expressionError
+				{ $$ = BuildStmtRepeat($2,$3,$5); }
+	;
+
+expressionError:
+		expression
+				/**/
+	|	error
+				{ $$ = BuildExprBad(); }
+	;
+
+WhileStatement:
+		WHILE expression do StatementSequence END
+				{ $$ = BuildStmtWhile($2,$4); }
+	|	WHILE error do StatementSequence END
+				{ temp = BuildExprBad();
+				  $$ = BuildStmtWhile(temp,$4); }
+	;
+
+seqCase:
+		/* empty */
+				{ $$ = 0; }
+	|	seqCase BAR ElementList COLON StatementSequence
+				{ $$ = AddCase($1,$3,$5); }
+	|	seqCase BAR error COLON StatementSequence
+				{ $$ = AddCase($1,0,$5); }
+	|	seqCase BAR
+				{ $$ = $1; }
+	|	ElementList COLON StatementSequence
+				{ $$ = AddCase(0,$1,$3); }
+	|	error COLON StatementSequence
+				{ $$ = AddCase(0,0,$3); }
+	;
+
+CaseStatement:
+		CASE expressionError OF seqCase END
+				{ $$ = BuildStmtCase($2,$4,0); }
+	|	CASE expressionError OF seqCase ELSE StatementSequence END
+				{ $$ = BuildStmtCase($2,$4,$6); }
+	;
+
+then:
+		THEN
+			/**/
+	|	DO
+			{ yyerror("Use THEN instead of DO"); }
+	;
+
+IfStatement:
+		IF expressionError then StatementSequence ElsePart
+				{ $$ = BuildStmtIf($2,$4,$5); }
+	;
+
+ElsePart:
+		END
+				{ $$ = AddToStmtList(0,0); }
+	|	ELSE StatementSequence END
+				{ $$ = $2; }
+	|	ELSIF expressionError then StatementSequence ElsePart
+				{ temp = BuildStmtIf($2,$4,$5);
+				    $$ = AddToStmtList(0,temp); }
+	;
+
+/* blame yacc for gross sequence syntax */
+StatementSequence:
+		StatementSequence1
+				/**/
+	|	semis StatementSequence1 semis
+				{ $$ = $2; }
+	|	StatementSequence1 semis
+				/**/
+	|	semis StatementSequence1
+				{ $$ = $2; }
+	|	semis
+				{ $$ = AddToStmtList(0,0); }
+	|	/* empty */
+				{ $$ = AddToStmtList(0,0); }
+	;
+
+StatementSequence1:
+		StatementSequence1 semis statement
+				{ $$ = AddToStmtList($1,$3); }
+	|	StatementSequence1 { yyerror("Missing semicolon"); } statement
+				{ $$ = AddToStmtList($1,$3); }
+	|	statement
+				{ $$ = AddToStmtList(0,$1); }
+	;
+
+semis:
+		SEMICOLON
+	|	semis SEMICOLON
+	;
+
+ProcedureCall:
+		designator
+				{ temp = AddToExprList(0,0);
+				  $$ = BuildStmtProc($1,0); }
+	;
+
+assignment:
+		designator assign expressionError
+				{ $$ = BuildStmtAssign($1,$3); }
+	;
+
+/*
+	The last four EXIT rules will shift/reduce conflict because of the
+	optional semicolon rule.
+*/
+ExitStatement:
+		EXIT
+				{ $$ = BuildStmtExit(LOOP); }
+	|	EXIT LOOP
+				{ $$ = BuildStmtExit(LOOP); }
+	|	EXIT FOR
+				{ $$ = BuildStmtExit(FOR); }
+	|	EXIT WHILE
+				{ $$ = BuildStmtExit(WHILE); }
+	|	EXIT REPEAT
+				{ $$ = BuildStmtExit(REPEAT); }
+	;
+
+statement:
+		assignment
+				/*=*/
+	|	ProcedureCall
+				/*=*/
+	|	IfStatement
+				/*=*/
+	|	CaseStatement
+				/*=*/
+	|	WhileStatement
+				/*=*/
+	|	RepeatStatement
+				/*=*/
+	|	LoopStatement
+				/*=*/
+	|	ForStatement
+				/*=*/
+	|	WithStatement
+				/*=*/
+	|	ExitStatement
+				/*=*/
+	    /* The following two rules will shift/reduce conflict because */
+	    /* semicolons are optional between statements (see semicolon  */
+	    /* production) to assist error recovery. */
+	|	RETURN
+				{ $$ = BuildStmtReturn(0); }
+	|	RETURN expression
+				{ $$ = BuildStmtReturn($2); }
+	|	error
+				{ $$ = 0; }
+	;
+
+ActualParameters:
+		LPAREN RPAREN
+				{ $$ = AddToExprList(0,0); }
+	|	LPAREN ExpList RPAREN
+				{ $$ = $2; }
+	;
+
+factor:
+		CARDCONST
+				{ $$ = BuildExprConst($1); }
+	|	REALCONST
+				{ $$ = BuildExprConst($1); }
+	|	CHARCONST
+				{ $$ = BuildExprConst($1); }
+	|	STRCONST
+				{ $$ = BuildExprConst($1); }
+	|	setexpr
+				/*=*/
+	|	designator
+				/*=*/
+	|	LPAREN expression RPAREN
+				{ $$ = $2; }
+	|	NOT factor
+				{ $$ = BuildExprUnOp(NOT,$2); }
+	;
+
+term:
+		factor
+				/*=*/
+	|	term ASTERISK factor
+				{ $$ = BuildExprBinOp(ASTERISK,$1,$3); }
+	|	term SLASH factor
+				{ $$ = BuildExprBinOp(SLASH,$1,$3); }
+	|	term DIV factor
+				{ $$ = BuildExprBinOp(DIV,$1,$3); }
+	|	term MOD factor
+				{ $$ = BuildExprBinOp(MOD,$1,$3); }
+	|	factor AND term
+				{ $$ = BuildExprBinOp(AND,$1,$3); }
+	|	factor AMPERSAND term
+				{ $$ = BuildExprBinOp(AMPERSAND,$1,$3); }
+	;
+
+TermList:
+		term
+				/*=*/
+	|	TermList PLUS term
+				{ $$ = BuildExprBinOp(PLUS,$1,$3); }
+	|	TermList MINUS term
+				{ $$ = BuildExprBinOp(MINUS,$1,$3); }
+	|	term OR TermList
+				{ $$ = BuildExprBinOp(OR,$1,$3); }
+	;
+
+PlusTermList:
+		term
+				{ $$ = BuildExprUnOp(PLUS,$1); }
+	|	PlusTermList PLUS term
+				{ $$ = BuildExprBinOp(PLUS,$1,$3); }
+	|	PlusTermList MINUS term
+				{ $$ = BuildExprBinOp(MINUS,$1,$3); }
+	|	term OR TermList
+				{ temp = BuildExprUnOp(PLUS,$1);
+				  $$ = BuildExprBinOp(OR,temp,$3); }
+	;
+
+MinusTermList:
+		term
+				{ $$ = BuildExprUnOp(MINUS,$1); }
+	|	MinusTermList PLUS term
+				{ $$ = BuildExprBinOp(PLUS,$1,$3); }
+	|	MinusTermList MINUS term
+				{ $$ = BuildExprBinOp(MINUS,$1,$3); }
+	|	term OR TermList
+				{ temp = BuildExprUnOp(MINUS,$1);
+				  $$ = BuildExprBinOp(OR,temp,$3); }
+	;
+
+SimpleExpression:
+		TermList
+				/*=*/
+	|	PLUS PlusTermList
+				{ $$ = $2; }
+	|	MINUS MinusTermList
+				{ $$ = $2; }
+	;
+
+expression:
+		SimpleExpression
+				/*=*/
+	|	SimpleExpression EQUALS SimpleExpression
+				{ $$ = BuildExprBinOp(EQUALS,$1,$3); }
+	|	SimpleExpression SHARP SimpleExpression
+				{ $$ = BuildExprBinOp(SHARP,$1,$3); }
+	|	SimpleExpression NOTEQUAL SimpleExpression
+				{ $$ = BuildExprBinOp(NOTEQUAL,$1,$3); }
+	|	SimpleExpression LESS SimpleExpression
+				{ $$ = BuildExprBinOp(LESS,$1,$3); }
+	|	SimpleExpression LSEQUAL SimpleExpression
+				{ $$ = BuildExprBinOp(LSEQUAL,$1,$3); }
+	|	SimpleExpression GREATER SimpleExpression
+				{ $$ = BuildExprBinOp(GREATER,$1,$3); }
+	|	SimpleExpression GREQUAL SimpleExpression
+				{ $$ = BuildExprBinOp(GREQUAL,$1,$3); }
+	|	SimpleExpression IN SimpleExpression
+				{ $$ = BuildExprBinOp(IN,$1,$3); }
+	;
+
+subscript:
+		expression
+				/*=*/
+	|	expression COLON expression
+				{ $$ = BuildExprRange($1,$3); }
+	;
+
+SubsList:
+		subscript
+				{ $$ = AddToExprList(0,$1); }
+	|	SubsList COMMA subscript
+				{ $$ = AddToExprList($1,$3); }
+	;
+
+ExpList:
+		expression
+				{ $$ = AddToExprList(0,$1); }
+	|	ExpList COMMA expression
+				{ $$ = AddToExprList($1,$3); }
+	;
+
+/* Dot before any other selector may be module OR record selection */
+designatorx:
+		qualident LBRACKET SubsList RBRACKET 
+				{ temp = BuildExprSym($1);
+				    $$ = BuildExprSubscript(temp,$3); }
+	|	designatorx LBRACKET SubsList RBRACKET 
+				{ $$ = BuildExprSubscript($1,$3); }
+	|	qualident UPARROW
+				{ temp = BuildExprSym($1);
+				    $$ = BuildExprDeref(temp); }
+	|	designatorx UPARROW
+				{ $$ = BuildExprDeref($1); }
+	|	designatorx DOT IDENT
+				{ $$ = BuildExprDot($1,$3); }
+	|	qualident ActualParameters
+				{ temp = BuildExprSym($1);
+				  $$ = BuildExprFunc(temp,$2); }
+	|	designatorx ActualParameters
+				{ $$ = BuildExprFunc($1,$2); }
+	;
+
+designator:
+		qualident
+				{ $$ = BuildExprSym($1); }
+	|	designatorx
+				/*=*/
+	;
+
+
+
+VariableDeclaration:
+                IdentList COLON type initial semicolon
+                                { DefineVarList($1,$3,VAR,0,$4,0); }
+        |       IDENT STRCONST COLON type initial semicolon
+                                { temp = MakeIdent($1);
+                                    temp = AddToIdentList(0,temp);
+                                    DefineVarList(temp,$4,VAR,0,$5,$2); }
+        |       ATSHARED IdentList COLON type initial semicolon
+                                { DefineVarList($2,$4,VAR,ATSHARED,$5,0); }
+        |       ATEXTERNAL IdentList COLON type initial semicolon
+                                { DefineVarList($2,$4,ATEXTERNAL,0,$5,0); }
+        |       ATGLOBAL IdentList COLON type initial semicolon
+                                { DefineVarList($2,$4,ATGLOBAL,0,$5,0); }
+        |       ATSHARED ATGLOBAL IdentList COLON type initial semicolon
+                                { DefineVarList($3,$5,ATGLOBAL,ATSHARED,$6,0);}
+        |       ATGLOBAL ATSHARED IdentList COLON type initial semicolon
+                                { DefineVarList($3,$5,ATGLOBAL,ATSHARED,$6,0);}
+	|	error SEMICOLON;
+				/**/
+	;
+
+seqVariableDeclaration:
+		/* empty */
+				/**/
+	|	seqVariableDeclaration VariableDeclaration
+				/**/
+	;
+
+
+oplsFormals:
+		/* empty */
+				{ $$ = 0; }
+	|	varFormalType
+				/*=*/
+	|	oplsFormals COMMA varFormalType
+				{ $$ = AppendParamList($1,$3); }
+	;
+
+varFormalType:
+		FormalType
+				{ $$ = MakeParamList(0,0,$1); }
+	|	VAR FormalType
+				{ $$ = MakeParamList(VAR,0,$2); }
+	|	CONST FormalType
+				{ $$ = MakeParamList(CONST,0,$2); }
+	;
+
+ProcedureType:
+		PROCEDURE
+				{ $$ = procTypeNode; }
+	|	PROCEDURE LPAREN oplsFormals RPAREN
+				{ $$ = ProcType($3,0); }
+	|	PROCEDURE LPAREN oplsFormals RPAREN COLON qualident
+				{ temp = TypeOf($6); $$ = ProcType($3,temp); }
+	;
+PointerCheckType:
+		/* empty */
+				{ $$ = POINTER; }
+	|	ATPASCAL
+				{ $$ = ATPASCAL; }
+	|	ATC
+				{ $$ = ATC; }
+	|	ATNOCHECK
+				{ $$ = ATNOCHECK; }
+	|	ATNILCHECK
+				{ $$ = ATNILCHECK; }
+	|	ATLOCAL
+				{ $$ = ATLOCAL; }
+	;
+
+PointerType:
+		/* The following rules will reduce/reduce conflict since    */
+		/* type->SimpleType->qualident->IDENT. The first rule will  */
+		/* reduced because it comes first.  The conflict exists     */
+		/* because normally we want to find out what the to type is,*/
+		/* but if it is an IDENT, it may not be defined yet. */
+		POINTER PointerCheckType TO IDENT
+				{ $$ = PointerForwardType($4,$2); }
+	|	POINTER PointerCheckType TO type
+				{ $$ = PointerType($4,$2); }
+	;
+
+SetType:
+		SET OF SimpleType
+				{ $$ = SetType($3,0); }
+        |       SET ATLEFTTORIGHT OF SimpleType
+                                { $$ = SetType($4,ATLEFTTORIGHT); }
+        |       SET ATRIGHTTOLEFT OF SimpleType
+                                { $$ = SetType($4,ATRIGHTTOLEFT); }
+	;
+
+ConstElement:
+		ConstExpression
+				{ $$ = MakeConstSet($1,0); }
+	|	ConstExpression DOTDOT ConstExpression
+				{ $$ = MakeConstSet($1,$3); }
+	;
+
+ConstElementList:
+		ConstElement
+				{ $$ = AddToConstSetList(0,$1); }
+	|	ConstElementList COMMA ConstElement
+				{ $$ = AddToConstSetList($1,$3); }
+	;
+
+Element:
+		expression
+				{ $$ = MakeExprSet($1,0); }
+	|	expression DOTDOT expression
+				{ $$ = MakeExprSet($1,$3); }
+	;
+
+ElementList:
+		Element
+				{ $$ = AddToExprSetList(0,$1); }
+	|	ElementList COMMA Element
+				{ $$ = AddToExprSetList($1,$3); }
+	;
+
+variant:
+		/* empty */
+				{ $$ = 0; }
+	|	ConstElementList COLON FieldListSequence
+				{ $$ = MakeVariant($1,$3); }
+	|	error COLON FieldListSequence
+				{ $$ = MakeVariant(0,$3); }
+	;
+
+TagType:
+		qualident
+				{ $$ = TypeOf($1); }
+	|	ATSIZE ConstExpression TagType
+				{ $$ = TypeWithSize($3,$2); }
+	|	ATALIGN ConstExpression TagType
+				{ $$ = TypeWithAlign($3,$2); }
+	;
+				  
+FieldList:
+		/* empty */
+				{ $$ = EmptyFieldList(); }
+	|	IdentList COLON type
+				{ $$ = MakeFieldList($1,$3); }
+/* following case should be phased out */
+	|	CASE TagType OF seqVariant opFormELSE END
+				{ $$ = MakeTagField(0,$2,$4,$5); }
+	|	CASE COLON TagType OF seqVariant opFormELSE END
+				{ $$ = MakeTagField(0,$3,$5,$6); }
+	|	CASE IDENT COLON TagType OF seqVariant opFormELSE END
+				{ $$ = MakeTagField($2,$4,$6,$7); }
+	;
+
+seqVariant:
+		variant
+				{ $$ = AddToVariantList(0,$1); }
+	|	seqVariant BAR variant
+				{ $$ = AddToVariantList($1,$3); }
+	;
+
+opFormELSE:
+		/* empty */
+				{ temp = EmptyFieldList();
+				  $$ = MakeVariant(0,temp); }
+	|	ELSE FieldListSequence
+				{ $$ = MakeVariant(0,$2); }
+	;
+
+FieldListSequence:
+		FieldList
+				/*=*/
+	|	FieldListSequence SEMICOLON FieldList
+				{ $$ = AppendFieldList($1,$3); }
+	;
+
+RecordType:
+		RECORD FieldListSequence END
+				{ $$ = RecordType($2,0); }
+	|	RECORD ATLEFTTORIGHT FieldListSequence END
+				{ $$ = RecordType($3,ATLEFTTORIGHT); }
+	|	RECORD ATRIGHTTOLEFT FieldListSequence END
+				{ $$ = RecordType($3,ATRIGHTTOLEFT); }
+	;
+
+array:
+		ARRAY
+				{ $$ = ARRAY; }
+	|	ATSUBARRAY
+				{ $$ = ATSUBARRAY; }
+	;
+
+DynArrayType:
+		ATDYNARRAY PointerCheckType OF type
+				{ $$ = DynArrayType($4,0,$2); }
+	|	ATDYNARRAY PointerCheckType ATNOCOUNT OF type
+				{ $$ = DynArrayType($5,ATNOCOUNT,$2); }
+	|	ATDYNARRAY ATNOCOUNT PointerCheckType OF type
+				{ $$ = DynArrayType($5,ATNOCOUNT,$3); }
+
+	;
+
+ArrayType:
+		ARRAY SimpleType ArrayElementPart
+				{ $$ = ArrayType($2,$3,ARRAY,0); }
+	|	array OF qualident
+				{ temp = TypeOf($3);
+				    $$ = ArrayType(0,temp,$1,0); }
+	|	array ATNOCOUNT OF qualident
+				{ temp = TypeOf($4);
+				    $$ = ArrayType(0,temp,$1,ATNOCOUNT); }
+	|	array OF ArrayType
+				{ $$ = ArrayType(0,$3,$1,0); }
+	|	array ATNOCOUNT OF ArrayType
+				{ $$ = ArrayType(0,$4,$1,ATNOCOUNT); }
+	;
+
+ArrayElementPart:
+		OF type
+				{ $$ = $2; }
+	|	COMMA SimpleType ArrayElementPart
+		/* Right recursion is important for multidimensional arrays */
+				{ $$ = ArrayType($2,$3,ARRAY,0); }
+	;
+
+SubrangeType:
+		LBRACKET ConstExpression DOTDOT ConstExpression RBRACKET
+				{ $$ = SubrangeType($2,$4,0); }
+	|	qualident LBRACKET ConstExpression DOTDOT ConstExpression
+			RBRACKET
+				{ temp = TypeOf($1);
+				    $$ = SubrangeType($3,$5,temp); }
+	;
+
+IdentList:
+		IDENT
+				{ temp = MakeIdent($1);
+				    $$ = AddToIdentList(0,temp); }
+/* Following will shift/reduce conflict */
+	|	IdentList COMMA IDENT
+				{ temp = MakeIdent($3);
+				    $$ = AddToIdentList($1,temp); }
+	|	IdentList COMMA
+				{ $$ = $1;
+				  yyerror("Identifier expected"); }
+	|	IdentList IDENT
+				{ temp = MakeIdent($2);
+				    $$ = AddToIdentList($1,temp);
+				    yyerror("Comma expected"); }
+	;
+
+EnumConst:
+		IDENT
+				{ $$ = MakeEnumNode($1,0); }
+	|	IDENT EQUALS ConstExpression
+				{ $$ = MakeEnumNode($1,$3); }
+				/* User-selected ordinal values */
+	;
+
+EnumConstList:
+		EnumConst
+				{ $$ = AddToEnumList(0,$1); }
+/* Following will shift/reduce conflict */
+	|	EnumConstList COMMA EnumConst
+				{ $$ = AddToEnumList($1,$3); }
+	|	EnumConstList COMMA
+				{ $$ = $1;
+				  yyerror("Identifier expected"); }
+	|	EnumConstList EnumConst
+				{ $$ = AddToEnumList($1,$2);
+				  yyerror("Comma expected"); }
+	;
+
+enumeration:
+		LPAREN EnumConstList RPAREN
+				{ $$ =  EnumerationType($2); }
+	;
+
+SimpleType:
+		qualident
+				{ $$ = TypeOf($1); }
+	|	enumeration
+				/*=*/
+	|	SubrangeType
+				/*=*/
+	;
+
+type:
+		SimpleType
+				/*=*/
+	|	ArrayType
+				/*=*/
+	|	DynArrayType
+				/*=*/
+	|	RecordType
+				/*=*/
+	|	SetType
+				/*=*/
+	|	PointerType
+				/*=*/
+	|	ProcedureType
+				/*=*/
+/* Shift/reduce conflict that prohibits @size a (enum1, enum2), as
+   will always be interpreted as @size a (size expression) */
+	|	ATSIZE ConstExpression type
+				{ $$ = TypeWithSize($3,$2); }
+	|	ATALIGN ConstExpression type
+				{ $$ = TypeWithAlign($3,$2); }
+	;
+
+TypeDeclaration:
+		IDENT EQUALS type SEMICOLON
+				{ DefineType($1,$3); }
+	|	IDENT COLON
+		    { yyerror("Use '=' instead of ':' for type declarations"); }
+		    type SEMICOLON
+		    		{DefineType($1,$4); }
+	|	IDENT SEMICOLON
+				{ DefineType($1,0); }
+	|	IDENT EQUALS ATSIZE ConstExpression SEMICOLON
+				{ temp = OpaqueWithSize($1,$4);
+				    DefineType($1,temp); }
+	|	error SEMICOLON
+				/**/
+	;
+
+seqTypeDeclaration:
+		/* empty */
+				/**/
+	|	seqTypeDeclaration TypeDeclaration
+				/**/
+	;
+
+
+initial:
+                /* empty */
+                                { $$ = 0; }
+        |       EQUALS LBRACE  FormerElementList RBRACE
+                                { $$ = $3; }
+        |       EQUALS  ConstExpression
+                                { temp = MakeFormerConstElement(0,$2);
+                                    $$ = AddToFormerElementList(0,temp); }
+        ;
+
+
+ConstFormer:
+                qualident LBRACE FormerElementList RBRACE
+                                { $$ = ConstFormer($1,$3); }
+        ;
+
+
+
+FormerElement:
+                /* this rule will conflict with the next one, but is needed */
+                /* to catch field names */
+                IDENT COLON ConstExpression
+                                { $$ = MakeFormerFieldElement($1,$3); }
+        |       ConstElementList COLON ConstExpression
+                                { $$ = MakeFormerConstElement($1,$3); }
+        ;
+
+FormerElementList:
+                FormerElement
+                                { $$ = AddToFormerElementList(0,$1); }
+        |       FormerElementList SEMICOLON FormerElement
+                                { $$ = AddToFormerElementList($1,$3); }
+        ;
+
+
+setconst:
+		LBRACE oplsConstElement RBRACE
+				{ $$ = ConstSet($2,0); }
+	|	LBRACE error RBRACE
+				{ $$ = ConstSet(0,0); }
+	|	qualident LBRACE oplsConstElement RBRACE
+				{ temp = TypeOf($1); $$ = ConstSet($3,temp); }
+	|	qualident LBRACE error RBRACE
+				{ temp = TypeOf($1); $$ = ConstSet(0,temp); }
+	;
+
+oplsConstElement:
+		/* empty */
+				{ $$ = 0; }
+	|	ConstElementList
+				/*=*/
+	;
+
+setexpr:
+		LBRACE oplsElement RBRACE
+				{ $$ = BuildExprSet($2,0); }
+	|	LBRACE error RBRACE
+				{ $$ = BuildExprSet(0,0); }
+	|	qualident LBRACE oplsElement RBRACE
+				{ $$ = BuildExprSet($3,$1); }
+	|	qualident LBRACE error RBRACE
+				{ $$ = BuildExprSet(0,$1); }
+	;
+
+oplsElement:
+		/* empty */
+				{ $$ = 0; }
+	|	ElementList
+				/*=*/
+	;
+
+ConstParameters:
+		LPAREN RPAREN 
+				{ $$ = 0; }
+	|	LPAREN ConstParamList RPAREN 
+				{ $$ = $2; }
+	;
+
+ConstParamList:
+		ConstParam
+				{ $$ = AddToConstParamList(0,$1); }
+	|	ConstParamList COMMA ConstParam
+				{ $$ = AddToConstParamList($1,$3); }
+	;
+
+ConstParam:
+	/* The following rules will cause two reduce/reduce conflicts and a */
+	/* shift/reduce conflict.  This is necessary because qualident in */
+	/* this context might be a type or var and won't be properly treated */
+	/* as a constant.  This rule will be reduced, since it occurs first. */
+		qualident
+				{ $$ = ConstParamIdent($1); }
+	|	ConstExpression
+				{ $$ = ConstParamConst($1); }
+	;
+
+ConstFactor:
+		qualident
+				{ $$ = ConstSym($1); }
+	|	CARDCONST
+				/*=*/
+	|	REALCONST
+				/*=*/
+	|	CHARCONST
+				/*=*/
+	|	STRCONST
+				/*=*/
+	|	setconst
+				/*=*/
+        |       ConstFormer
+                                /*=*/
+	|	LPAREN ConstExpression RPAREN
+				{ $$ = $2; }
+	|	NOT ConstFactor
+				{ $$ = ConstUnOp(NOT,$2); }
+	|	qualident ConstParameters
+				{ $$ = ConstBuiltinFunction($1,$2); }
+				/*=*/
+	;
+
+ConstTerm:
+		ConstFactor
+				/*=*/
+	|	ConstTerm ASTERISK ConstFactor
+				{ $$ = ConstBinOp(ASTERISK,$1,$3,0); }
+	|	ConstTerm SLASH ConstFactor
+				{ $$ = ConstBinOp(SLASH,$1,$3,0); }
+	|	ConstTerm DIV ConstFactor
+				{ $$ = ConstBinOp(DIV,$1,$3,0); }
+	|	ConstTerm MOD ConstFactor
+				{ $$ = ConstBinOp(MOD,$1,$3,0); }
+	|	ConstFactor AND ConstTerm
+				{ $$ = ConstBinOp(AND,$1,$3,0); }
+	|	ConstFactor AMPERSAND ConstTerm
+				{ $$ = ConstBinOp(AMPERSAND,$1,$3, 0); }
+	;
+
+
+ConstTermList:
+		ConstTerm
+				/*=*/
+	|	ConstTermList PLUS ConstTerm
+				{ $$ = ConstBinOp(PLUS,$1,$3,0); }
+	|	ConstTermList MINUS ConstTerm
+				{ $$ = ConstBinOp(MINUS,$1,$3,0); }
+	|	ConstTerm OR ConstTermList
+				{ $$ = ConstBinOp(OR,$1,$3,0); }
+	;
+
+ConstPlusTermList:
+		ConstTerm
+				{ $$ = ConstUnOp(PLUS,$1,0); }
+	|	ConstPlusTermList PLUS ConstTerm
+				{ $$ = ConstBinOp(PLUS,$1,$3,0); }
+	|	ConstPlusTermList MINUS ConstTerm
+				{ $$ = ConstBinOp(MINUS,$1,$3,0); }
+	|	ConstTerm OR ConstTermList
+				{ temp = ConstUnOp(PLUS,$1,0);
+				  $$ = ConstBinOp(OR,temp,$3,0); }
+	;
+
+ConstMinusTermList:
+		ConstTerm
+				{ $$ = ConstUnOp(MINUS,$1,0); }
+	|	ConstMinusTermList PLUS ConstTerm
+				{ $$ = ConstBinOp(PLUS,$1,$3,0); }
+	|	ConstMinusTermList MINUS ConstTerm
+				{ $$ = ConstBinOp(MINUS,$1,$3,0); }
+	|	ConstTerm OR ConstTermList
+				{ temp = ConstUnOp(MINUS,$1,0);
+				  $$ = ConstBinOp(OR,temp,$3,0); }
+	;
+
+SimpleConstExpr:
+		ConstTermList
+				/*=*/
+	|	PLUS ConstPlusTermList
+				{ $$ = $2; }
+	|	MINUS ConstMinusTermList
+				{ $$ = $2; }
+	;
+
+/*ConstNode*/
+ConstExpression:
+		SimpleConstExpr
+				/*=*/
+	|	SimpleConstExpr EQUALS SimpleConstExpr
+				{ $$ = ConstBinOp(EQUALS,$1,$3,0); }
+	|	SimpleConstExpr SHARP SimpleConstExpr
+				{ $$ = ConstBinOp(SHARP,$1,$3,0); }
+	|	SimpleConstExpr NOTEQUAL SimpleConstExpr
+				{ $$ = ConstBinOp(NOTEQUAL,$1,$3,0); }
+	|	SimpleConstExpr LESS SimpleConstExpr
+				{ $$ = ConstBinOp(LESS,$1,$3,0); }
+	|	SimpleConstExpr LSEQUAL SimpleConstExpr
+				{ $$ = ConstBinOp(LSEQUAL,$1,$3,0); }
+	|	SimpleConstExpr GREATER SimpleConstExpr
+				{ $$ = ConstBinOp(GREATER,$1,$3,0); }
+	|	SimpleConstExpr GREQUAL SimpleConstExpr
+				{ $$ = ConstBinOp(GREQUAL,$1,$3,0); }
+	|	SimpleConstExpr IN SimpleConstExpr
+				{ $$ = ConstBinOp(IN,$1,$3,0); }
+	;
+
+ConstantDeclaration:
+		IDENT EQUALS ConstExpression SEMICOLON
+				{ DefineConst($1,$3); }
+	|	error SEMICOLON
+				/**/
+	;
+
+seqConstantDeclaration:
+		/* empty */
+				/**/
+	|	seqConstantDeclaration ConstantDeclaration
+				/**/
+	;
+
+/*Symbol*/
+qualident:
+		IDENT
+				{ temp = MakeIdent($1);
+				    $$ = AddToIdentList(0,temp); }
+	|	qualident DOT IDENT
+				{ temp = MakeIdent($3);
+				    $$ = AddToIdentList($1,temp); }
+	;
+
+/*String*/
+ENDident:
+		END IDENT
+				{ $$ = $2; }
+	|
+		END
+			{ yyerror("Missing identifier on procedure/module end"); 
+			  $$ = 0; }
+	;
+
+moduleDOT:
+	{ ScanEofOK() ; } moduleDOT1
+	;
+
+moduleDOT1:
+		DOT
+	|
+		/* empty */
+			{ yyerror("Global module must end with a period"); }
+	|
+		SEMICOLON
+			{ yyerror("Global module must end with a period"); }
+	;
+
+semicolon:
+		SEMICOLON
+	|
+		/*empty*/
+			{ yyerror("Missing semi-colon"); } 
+	;

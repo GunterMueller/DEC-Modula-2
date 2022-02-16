@@ -1,0 +1,19 @@
+(* $Header: longmath.def,v 1.5 87/07/02 12:48:51 joel WSL/WRL/Release $ *)
+
+(* This defines an interface to the C math library. *)
+
+DEFINITION MODULE longmath;
+EXPORT QUALIFIED sin, cos, atan, atan2, exp, sqrt, log, ldexp, tan, pow;
+
+PROCEDURE @external sin   (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external cos   (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external atan  (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external atan2 (x, y : LONGREAL) : LONGREAL;
+PROCEDURE @external exp   (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external sqrt  (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external log   (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external ldexp (x    : LONGREAL; exp : INTEGER) : LONGREAL;
+PROCEDURE @external tan   (x    : LONGREAL) : LONGREAL;
+PROCEDURE @external pow   (x, y : LONGREAL) : LONGREAL;
+
+END longmath.
